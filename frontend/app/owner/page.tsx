@@ -140,7 +140,7 @@ export default function OwnerDashboard() {
                             <stat.icon className="w-4 h-4" />
                             <span className="text-xs font-semibold uppercase tracking-wider">{stat.label}</span>
                         </div>
-                        <p className={`text-3xl font-bold tracking-tight ${stat.accent ? 'text-[#C8FF00]' : ''}`}>
+                        <p className={`text-3xl font-bold tracking-tight ${stat.accent ? 'text-[#ff7b9b]' : ''}`}>
                             {stat.value}
                         </p>
                     </div>
@@ -178,7 +178,7 @@ export default function OwnerDashboard() {
                                     <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Active</p>
                                     <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
                                 </div>
-                                <p className="text-3xl font-bold text-[#C8FF00] mt-1">{insights.statusCounts.active}</p>
+                                <p className="text-3xl font-bold text-[#ff7b9b] mt-1">{insights.statusCounts.active}</p>
                             </div>
                             <div className="card bg-orange-50 border-orange-100">
                                 <div className="flex items-center justify-between">
@@ -202,7 +202,7 @@ export default function OwnerDashboard() {
                                 <TrendingUp className="w-32 h-32" />
                             </div>
                             <p className="text-sm font-medium text-neutral-400 relative z-10 mb-2">💰 Collection Rate</p>
-                            <p className="text-5xl font-black text-[#C8FF00] relative z-10">{insights.collectionRate}%</p>
+                            <p className="text-5xl font-black text-[#ff7b9b] relative z-10">{insights.collectionRate}%</p>
                             <p className="text-xs text-neutral-500 mt-4 relative z-10 max-w-[200px]">
                                 Your mess is currently running at a {insights.collectionRate}% revenue collection efficiency this cycle.
                             </p>

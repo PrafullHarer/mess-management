@@ -1,15 +1,15 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-// import { jwtDecode } from 'jwt-decode'; // Not strictly needed if we store user info
 import { useRouter } from 'next/navigation';
 
 interface User {
     id: string;
     name: string;
-    role: 'OWNER' | 'STUDENT' | 'MANAGER';
+    role: 'SUPER_ADMIN' | 'OWNER' | 'STUDENT' | 'MANAGER';
     mobile: string;
     email?: string;
+    messId?: string | null;
 }
 
 interface AuthContextType {
@@ -30,12 +30,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // Try to fetch user data from API (verifies HttpOnly cookie)
                 const { data } = await import('../lib/api').then(mod => mod.default.get('/auth/me'));
                 setUser(data);
                 localStorage.setItem('user', JSON.stringify(data));
             } catch (error) {
-                // If 401/403, clear local storage
                 console.error("Session verification failed", error);
                 Cookies.remove('token');
                 localStorage.removeItem('user');
@@ -53,10 +51,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
 
-        if (userData.role === 'OWNER') {
-            router.push('/owner');
-        } else {
-            router.push('/student');
+        // Route based on role
+        switch (userData.role) {
+            case 'SUPER_ADMIN':
+                router.push('/super-admin');
+                break;
+            case 'OWNER':
+            case 'MANAGER':
+                router.push('/owner');
+                break;
+            case 'STUDENT':
+                router.push('/student');
+                break;
+            default:
+                router.push('/login');
         }
     };
 

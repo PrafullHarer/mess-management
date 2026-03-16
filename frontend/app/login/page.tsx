@@ -31,14 +31,14 @@ export default function LoginPage() {
             {/* Left Panel - Branding */}
             <div className="hidden lg:flex lg:w-1/2 bg-[#0A0A0A] relative overflow-hidden">
                 {/* Gradient Orbs */}
-                <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#C8FF00]/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-[#C8FF00]/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#ff7b9b]/20 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-[#ff7b9b]/10 rounded-full blur-3xl" />
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col justify-between p-12 w-full">
                     {/* Logo */}
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#C8FF00] rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-[#ff7b9b] rounded-xl flex items-center justify-center">
                             <UtensilsCrossed className="w-5 h-5 text-[#0A0A0A]" />
                         </div>
                         <span className="text-2xl font-bold text-white tracking-tight">
@@ -65,13 +65,13 @@ export default function LoginPage() {
             </div>
 
             {/* Right Panel - Login Form */}
-            <div className="flex-1 flex items-center justify-center bg-[#FAFAFA] px-6 py-12">
+            <div className="flex-1 flex items-center justify-center bg-[#faeee7] px-6 py-12">
                 <div className="w-full max-w-md">
                     {/* Mobile Logo */}
                     <div className="lg:hidden text-center mb-10">
                         <div className="inline-flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-[#0A0A0A] rounded-xl flex items-center justify-center">
-                                <UtensilsCrossed className="w-5 h-5 text-[#C8FF00]" />
+                                <UtensilsCrossed className="w-5 h-5 text-[#ff7b9b]" />
                             </div>
                             <span className="text-2xl font-bold text-[#0A0A0A] tracking-tight">
                                 Mess Management Software

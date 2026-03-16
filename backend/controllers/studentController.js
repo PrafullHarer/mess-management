@@ -10,10 +10,12 @@ const {
 } = require('../utils/calculations');
 
 const getStudents = asyncHandler(async (req, res) => {
-    const students = await getAllStudents();
+    const students = await getAllStudents(req.user.messId);
 
-    // Fetch all holidays for status computation
-    const holidays = await Holiday.find({});
+    // Fetch holidays for this mess for status computation
+    const holQuery = {};
+    if (req.user.messId) holQuery.messId = req.user.messId;
+    const holidays = await Holiday.find(holQuery);
     const holsFormatted = holidays.map(h => ({
         date: h.dateStr,
         slot: h.slot || 'Whole Day',
@@ -100,6 +102,7 @@ const addStudent = asyncHandler(async (req, res) => {
         passwordHash: hashedPassword,
         role: 'STUDENT',
         status: 'ACTIVE',
+        messId: req.user.messId, // Scope to the owner's mess
         plan: studentPlan,
         amount: safeInt(amount),
         paid: safeInt(paid),

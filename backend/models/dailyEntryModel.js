@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const dailyEntrySchema = mongoose.Schema({
     date: { type: String, required: true },       // YYYY-MM-DD
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     slot: {
         type: String,
         default: 'Daily'

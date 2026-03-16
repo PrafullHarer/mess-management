@@ -48,7 +48,7 @@ const markBatchAttendance = asyncHandler(async (req, res) => {
             const { studentId, afternoonStatus, nightStatus } = record;
             // Verify student exists and join date? (Optional but safer)
             // For now, trust frontend filter, but log if needed
-            const updatedRecord = await markAttendance(studentId, dateStr, afternoonStatus, nightStatus);
+            const updatedRecord = await markAttendance(studentId, dateStr, afternoonStatus, nightStatus, req.user.messId);
             results.push(updatedRecord);
         }
         console.log(`[ATTENDANCE] Successfully marked ${results.length} records for ${dateStr}`);
@@ -78,12 +78,14 @@ const getStudentsForDate = asyncHandler(async (req, res) => {
         throw new Error('Date is required');
     }
 
-    // Get all active students
-    const students = await User.find({
+    // Get all active students for this mess
+    const query = {
         role: 'STUDENT',
         status: 'ACTIVE',
         isDeleted: false
-    }).sort({ name: 1 }).select('name mobile mealSlot joinedAt');
+    };
+    if (req.user.messId) query.messId = req.user.messId;
+    const students = await User.find(query).sort({ name: 1 }).select('name mobile mealSlot joinedAt');
 
     // Filter by joinedAt - compare as strings
     const filteredStudents = students.filter(student => {

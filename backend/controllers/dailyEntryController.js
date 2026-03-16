@@ -4,7 +4,15 @@ const { DailyEntry, getDailyEntries, addDailyEntry, updateDailyEntry, deleteDail
 // Get all daily entries
 const getDailyEntriesController = asyncHandler(async (req, res) => {
     const { year, month } = req.query;
-    const entries = await getDailyEntries(year, month);
+    const query = {};
+    if (req.user.messId) query.messId = req.user.messId;
+    if (year && month) {
+        const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+        query.date = { $regex: `^${monthPrefix}` };
+    } else if (year) {
+        query.date = { $regex: `^${year}` };
+    }
+    const entries = await DailyEntry.find(query).sort({ date: -1, slot: 1 });
 
     res.json(entries.map(e => ({
         id: e._id.toString(),
@@ -35,7 +43,8 @@ const addDailyEntryController = asyncHandler(async (req, res) => {
         date,
         slot: slot || 'Daily',
         online: parseInt(online) || 0,
-        cash: parseInt(cash) || 0
+        cash: parseInt(cash) || 0,
+        messId: req.user.messId
     });
 
     res.status(201).json({

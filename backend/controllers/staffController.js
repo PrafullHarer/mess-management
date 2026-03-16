@@ -1,6 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
-const { createStaff, getAllStaff, updateStaff, deleteStaff, recordSalaryPayment, getStaffPaymentHistory } = require('../models/staffModel');
-const { createExpense, getAllExpenses, getExpensesByMonth, getMonthlyTotal, deleteExpense } = require('../models/expenseModel');
+const { Staff, createStaff, getAllStaff, updateStaff, deleteStaff, recordSalaryPayment, getStaffPaymentHistory } = require('../models/staffModel');
+const { Expense, createExpense, getAllExpenses, getExpensesByMonth, getMonthlyTotal, deleteExpense } = require('../models/expenseModel');
 
 
 const { getTodayStr, getISTDate } = require('../utils/dateUtils'); // Import new utils
@@ -9,13 +9,15 @@ const { getTodayStr, getISTDate } = require('../utils/dateUtils'); // Import new
 // IST is UTC+5:30 (handled in dateUtils now)
 
 const getStaff = asyncHandler(async (req, res) => {
-    const staff = await getAllStaff();
+    const query = {};
+    if (req.user.messId) query.messId = req.user.messId;
+    const staff = await Staff.find(query).sort({ created_at: -1 });
     res.json(staff);
 });
 
 const addStaff = asyncHandler(async (req, res) => {
     const { name, role, salary } = req.body;
-    const newStaff = await createStaff(name, role, salary);
+    const newStaff = await Staff.create({ name, role, salary, messId: req.user.messId });
     res.status(201).json(newStaff);
 });
 
@@ -58,11 +60,15 @@ const getExpenses = asyncHandler(async (req, res) => {
     let total = 0;
 
     if (year && month) {
-        expenses = await getExpensesByMonth(parseInt(year), parseInt(month));
-        total = await getMonthlyTotal(parseInt(year), parseInt(month));
+        const messId = req.user.messId;
+        const matchFilter = { dateStr: { $regex: `^${parseInt(year)}-${String(parseInt(month)).padStart(2, '0')}` } };
+        if (messId) matchFilter.messId = messId;
+        expenses = await Expense.find(matchFilter).sort({ dateStr: -1 }).populate('createdBy', 'name');
+        total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     } else {
-        expenses = await getAllExpenses();
-        // Calculate total for all expenses
+        const query = {};
+        if (req.user.messId) query.messId = req.user.messId;
+        expenses = await Expense.find(query).sort({ dateStr: -1 }).populate('createdBy', 'name');
         total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     }
 
@@ -93,13 +99,14 @@ const addExpense = asyncHandler(async (req, res) => {
         throw new Error(`Expense date cannot be in the future. Today is ${todayStr}`);
     }
 
-    const expense = await createExpense(
+    const expense = await Expense.create({
         description,
-        parseFloat(amount),
-        category || 'OTHER',
-        req.user._id,
-        expenseDateStr
-    );
+        amount: parseFloat(amount),
+        category: category || 'OTHER',
+        createdBy: req.user.id,
+        messId: req.user.messId,
+        dateStr: expenseDateStr
+    });
 
     res.status(201).json(expense);
 });

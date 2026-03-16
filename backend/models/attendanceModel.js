@@ -3,6 +3,7 @@ const { getTodayStr } = require('../utils/dateUtils');
 
 const attendanceSchema = mongoose.Schema({
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     // Store date as simple YYYY-MM-DD string to avoid ALL timezone issues
     dateStr: { type: String, required: true },
     // 2-shift attendance: each can be PRESENT, ABSENT, or null (not applicable)
@@ -17,10 +18,11 @@ attendanceSchema.index({ studentId: 1, dateStr: 1 }, { unique: true });
 
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-const markAttendance = async (studentId, dateStr, afternoonStatus, nightStatus) => {
+const markAttendance = async (studentId, dateStr, afternoonStatus, nightStatus, messId = null) => {
     const updateData = {};
     if (afternoonStatus !== undefined) updateData.afternoonStatus = afternoonStatus;
     if (nightStatus !== undefined) updateData.nightStatus = nightStatus;
+    if (messId) updateData.messId = messId;
 
     return await Attendance.findOneAndUpdate(
         { studentId, dateStr },

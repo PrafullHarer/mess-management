@@ -141,7 +141,7 @@ export default function DailyEntriesPage() {
                 </div>
                 <div className="card bg-[#0A0A0A] text-white border-[#0A0A0A]">
                     <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">Grand Total</p>
-                    <p className="text-2xl font-bold text-[#C8FF00]">₹{(totalOnline + totalCash).toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-[#ff7b9b]">₹{(totalOnline + totalCash).toLocaleString()}</p>
                 </div>
             </div>
 

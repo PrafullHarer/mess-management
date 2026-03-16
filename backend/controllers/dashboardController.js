@@ -14,6 +14,8 @@ const {
 
 const getDashboardStats = async (req, res) => {
     try {
+        const messId = req.user.messId;
+        const messFilter = messId ? { messId } : {};
         // Initialize defaults
         let students = 0;
         let staff = 0;
@@ -38,20 +40,20 @@ const getDashboardStats = async (req, res) => {
 
         // Query stats
         try {
-            students = await User.countDocuments({ role: 'STUDENT', status: 'ACTIVE', isDeleted: false });
+            students = await User.countDocuments({ role: 'STUDENT', status: 'ACTIVE', isDeleted: false, ...messFilter });
         } catch (e) {
             console.error('Dashboard: Failed to get student count', e.message);
         }
 
         try {
-            staff = await Staff.countDocuments({ status: 'ACTIVE' });
+            staff = await Staff.countDocuments({ status: 'ACTIVE', ...messFilter });
         } catch (e) {
             console.log('Dashboard: Staff count failed');
         }
 
         try {
             const revResult = await User.aggregate([
-                { $match: { role: 'STUDENT', status: 'ACTIVE', isDeleted: false } },
+                { $match: { role: 'STUDENT', status: 'ACTIVE', isDeleted: false, ...(messId ? { messId: new (require('mongoose').Types.ObjectId)(messId) } : {}) } },
                 { $group: { _id: null, total: { $sum: { $convert: { input: '$paid', to: 'double', onError: 0, onNull: 0 } } } } }
             ]);
             revenue = revResult.length > 0 ? revResult[0].total : 0;
@@ -61,7 +63,7 @@ const getDashboardStats = async (req, res) => {
 
         try {
             const penResult = await User.aggregate([
-                { $match: { role: 'STUDENT', status: 'ACTIVE', isDeleted: false } },
+                { $match: { role: 'STUDENT', status: 'ACTIVE', isDeleted: false, ...(messId ? { messId: new (require('mongoose').Types.ObjectId)(messId) } : {}) } },
                 {
                     $project: {
                         pendingAmount: {
@@ -83,7 +85,7 @@ const getDashboardStats = async (req, res) => {
 
         try {
             const fixedExpResult = await Staff.aggregate([
-                { $match: { status: 'ACTIVE' } },
+                { $match: { status: 'ACTIVE', ...(messId ? { messId: new (require('mongoose').Types.ObjectId)(messId) } : {}) } },
                 { $group: { _id: null, total: { $sum: '$salary' } } }
             ]);
             fixedExpense = fixedExpResult.length > 0 ? fixedExpResult[0].total : 0;
@@ -94,7 +96,7 @@ const getDashboardStats = async (req, res) => {
         try {
             const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const opExpResult = await Expense.aggregate([
-                { $match: { dateStr: { $regex: `^${monthPrefix}` } } },
+                { $match: { dateStr: { $regex: `^${monthPrefix}` }, ...(messId ? { messId: new (require('mongoose').Types.ObjectId)(messId) } : {}) } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]);
             operationalExpense = opExpResult.length > 0 ? opExpResult[0].total : 0;
@@ -105,7 +107,7 @@ const getDashboardStats = async (req, res) => {
         try {
             const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const sideIncomeResult = await SideIncome.aggregate([
-                { $match: { dateStr: { $regex: `^${monthPrefix}` } } },
+                { $match: { dateStr: { $regex: `^${monthPrefix}` }, ...(messId ? { messId: new (require('mongoose').Types.ObjectId)(messId) } : {}) } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]);
             sideIncome = sideIncomeResult.length > 0 ? sideIncomeResult[0].total : 0;
@@ -137,9 +139,12 @@ const getDashboardStats = async (req, res) => {
         // ===== NEW: Business Insights from calculations.js =====
         let insights = {};
         try {
-            const allStudents = await User.find({ role: 'STUDENT', isDeleted: false });
-            const holidays = await Holiday.find({});
-            const dailyEntries = await DailyEntry.find({});
+            const studentQuery = { role: 'STUDENT', isDeleted: false };
+            if (messId) studentQuery.messId = messId;
+            const allStudents = await User.find(studentQuery);
+            const holQuery = messId ? { messId } : {};
+            const holidays = await Holiday.find(holQuery);
+            const dailyEntries = await DailyEntry.find(messId ? { messId } : {});
 
             const holsFormatted = holidays.map(h => ({
                 date: h.dateStr,

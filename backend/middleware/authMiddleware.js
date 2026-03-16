@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('../utils/asyncHandler');
+const { User } = require('../models/userModel');
 
 const protect = asyncHandler(async (req, res, next) => {
     let token;
@@ -8,22 +9,50 @@ const protect = asyncHandler(async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = decoded;
-            next();
+            
+            // Fetch full user to get messId
+            const user = await User.findById(decoded.id).select('-passwordHash');
+            if (!user || user.isDeleted) {
+                res.status(401);
+                throw new Error('Not authorized, user not found');
+            }
+            
+            req.user = {
+                id: user._id.toString(),
+                role: user.role,
+                messId: user.messId ? user.messId.toString() : null,
+                name: user.name
+            };
+            return next();
         } catch (error) {
-            res.status(401);
-            throw new Error('Not authorized, token failed');
+            if (!res.headersSent) {
+                res.status(401);
+                throw new Error('Not authorized, token failed');
+            }
         }
     } else if (req.cookies && req.cookies.token) {
-        // Fallback: Check Cookie
         try {
             token = req.cookies.token;
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = decoded;
-            next();
+            
+            const user = await User.findById(decoded.id).select('-passwordHash');
+            if (!user || user.isDeleted) {
+                res.status(401);
+                throw new Error('Not authorized, user not found');
+            }
+            
+            req.user = {
+                id: user._id.toString(),
+                role: user.role,
+                messId: user.messId ? user.messId.toString() : null,
+                name: user.name
+            };
+            return next();
         } catch (error) {
-            res.status(401);
-            throw new Error('Not authorized, token failed');
+            if (!res.headersSent) {
+                res.status(401);
+                throw new Error('Not authorized, token failed');
+            }
         }
     }
 
@@ -33,8 +62,19 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 });
 
+// Only SUPER_ADMIN
+const superAdminOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'SUPER_ADMIN') {
+        next();
+    } else {
+        res.status(403);
+        throw new Error('Not authorized — Super Admin access required');
+    }
+};
+
+// OWNER or SUPER_ADMIN (mess management level)
 const ownerOnly = (req, res, next) => {
-    if (req.user && req.user.role === 'OWNER') {
+    if (req.user && (req.user.role === 'OWNER' || req.user.role === 'SUPER_ADMIN')) {
         next();
     } else {
         res.status(403);
@@ -42,4 +82,14 @@ const ownerOnly = (req, res, next) => {
     }
 };
 
-module.exports = { protect, ownerOnly };
+// OWNER, MANAGER, or SUPER_ADMIN (anyone who can manage a mess)
+const messStaffOnly = (req, res, next) => {
+    if (req.user && ['SUPER_ADMIN', 'OWNER', 'MANAGER'].includes(req.user.role)) {
+        next();
+    } else {
+        res.status(403);
+        throw new Error('Not authorized — staff access required');
+    }
+};
+
+module.exports = { protect, superAdminOnly, ownerOnly, messStaffOnly };

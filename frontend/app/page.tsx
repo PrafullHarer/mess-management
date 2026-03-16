@@ -15,13 +15,13 @@ import {
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans">
+        <div className="min-h-screen bg-[#faeee7] flex flex-col font-sans">
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 bg-[#0A0A0A] rounded-lg flex items-center justify-center">
-                            <UtensilsCrossed className="w-4 h-4 text-[#C8FF00]" />
+                            <UtensilsCrossed className="w-4 h-4 text-[#ff7b9b]" />
                         </div>
                         <span className="text-xl font-bold text-[#0A0A0A] tracking-tight">Mess Management</span>
                     </div>
@@ -39,12 +39,12 @@ export default function LandingPage() {
             {/* Hero Section */}
             <section className="pt-32 pb-20 px-6 overflow-hidden relative">
                 {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-[#C8FF00]/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-[#ff7b9b]/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto text-center relative z-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-neutral-200 rounded-full text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-8 shadow-sm">
-                        <div className="w-2 h-2 rounded-full bg-[#C8FF00] animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-[#ff7b9b] animate-pulse" />
                         Digitalized Canteen Operations
                     </div>
                     
@@ -52,7 +52,7 @@ export default function LandingPage() {
                         Modernize Your <span className="text-neutral-400">Mess</span> <br />
                         <span className="relative inline-block">
                             Operations
-                            <div className="absolute -bottom-2 left-0 right-0 h-2 bg-[#C8FF00]/30 -rotate-1 rounded-full -z-10" />
+                            <div className="absolute -bottom-2 left-0 right-0 h-2 bg-[#ff7b9b]/30 -rotate-1 rounded-full -z-10" />
                         </span>
                     </h1>
                     
@@ -79,7 +79,7 @@ export default function LandingPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2">
-                                            <TrendingUp className="w-5 h-5 text-[#C8FF00]" />
+                                            <TrendingUp className="w-5 h-5 text-[#ff7b9b]" />
                                             <span className="text-sm font-bold uppercase tracking-wider text-neutral-400">Revenue Snapshot</span>
                                         </div>
                                         <div className="text-4xl font-black">₹1,42,800</div>
@@ -114,7 +114,7 @@ export default function LandingPage() {
                             </div>
                             <div className="h-2 w-full bg-neutral-100 rounded" />
                         </div>
-                        <div className="hidden lg:block absolute -bottom-10 -left-10 w-48 p-4 bg-white border border-neutral-100 rounded-xl shadow-lg ring-4 ring-[#FAFAFA]">
+                        <div className="hidden lg:block absolute -bottom-10 -left-10 w-48 p-4 bg-white border border-neutral-100 rounded-xl shadow-lg ring-4 ring-[#faeee7]">
                             <div className="flex items-center gap-2 mb-2">
                                 <MessageSquare className="w-4 h-4 text-[#25D366]" />
                                 <span className="text-[10px] font-bold tracking-tight">Sent to WhatsApp</span>
@@ -129,7 +129,7 @@ export default function LandingPage() {
             <section className="py-24 px-6 bg-white border-y border-neutral-100">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
-                        <p className="text-[#C8FF00] font-black text-xs uppercase tracking-[0.2em] mb-4">Core Ecosystem</p>
+                        <p className="text-[#ff7b9b] font-black text-xs uppercase tracking-[0.2em] mb-4">Core Ecosystem</p>
                         <h2 className="text-3xl md:text-4xl font-black text-[#0A0A0A] tracking-tighter">Engineered for Reliability</h2>
                     </div>
 
@@ -208,7 +208,7 @@ export default function LandingPage() {
                     <div className="flex flex-col items-center md:items-start gap-4">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 bg-[#0A0A0A] rounded-lg flex items-center justify-center">
-                                <UtensilsCrossed className="w-4 h-4 text-[#C8FF00]" />
+                                <UtensilsCrossed className="w-4 h-4 text-[#ff7b9b]" />
                             </div>
                             <span className="text-lg font-bold text-[#0A0A0A] tracking-tight text-center md:text-left">
                                 Mess-Canteen-Mangement-Software

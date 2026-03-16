@@ -6,20 +6,9 @@ const path = require('path');
 // Load .env from backend directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// Fix: Use Google DNS for SRV lookups (required for mongodb+srv:// on some networks)
+// Fix: Try to use IPv4 first for DNS resolution
 try {
     dns.setDefaultResultOrder('ipv4first');
-    const resolver = new dns.Resolver();
-    resolver.setServers(['8.8.8.8', '8.8.4.4']);
-    // Monkey-patch the global dns.resolveSrv to use Google DNS
-    const originalResolveSrv = dns.resolveSrv;
-    dns.resolveSrv = function (hostname, callback) {
-        resolver.resolveSrv(hostname, callback);
-    };
-    const originalResolveTxt = dns.resolveTxt;
-    dns.resolveTxt = function (hostname, callback) {
-        resolver.resolveTxt(hostname, callback);
-    };
 } catch (e) {
     console.warn('DNS patch failed:', e.message);
 }

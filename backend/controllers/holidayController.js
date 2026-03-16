@@ -18,8 +18,15 @@ const stripAffectedPersonalHolidays = async (holiday) => {
 // Get all holidays
 const getHolidaysController = asyncHandler(async (req, res) => {
     const { year, month } = req.query;
-
-    const holidays = await getHolidays(year, month);
+    const query = {};
+    if (req.user.messId) query.messId = req.user.messId;
+    if (year && month) {
+        const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+        query.dateStr = { $regex: `^${monthPrefix}` };
+    } else if (year) {
+        query.dateStr = { $regex: `^${year}` };
+    }
+    const holidays = await Holiday.find(query).sort({ dateStr: -1 });
 
     res.json(holidays.map(h => ({
         id: h._id.toString(),
@@ -53,14 +60,22 @@ const addHolidayController = asyncHandler(async (req, res) => {
         throw new Error('Slot must be one of: Whole Day, Afternoon, Evening');
     }
 
-    // Check if holiday exists for this date
-    const existing = await Holiday.findOne({ dateStr: date });
+    // Check if holiday exists for this date in this mess
+    const existQuery = { dateStr: date };
+    if (req.user.messId) existQuery.messId = req.user.messId;
+    const existing = await Holiday.findOne(existQuery);
     if (existing) {
         res.status(400);
         throw new Error('Holiday already exists for this date');
     }
 
-    const holiday = await addHoliday(date, name || reason || '', slot || 'Whole Day', reason || name || '');
+    const holiday = await Holiday.create({
+        dateStr: date,
+        name: name || reason || '',
+        slot: slot || 'Whole Day',
+        reason: reason || name || '',
+        messId: req.user.messId
+    });
 
     // Instantly remove this date from any affected students' personal holidays
     await stripAffectedPersonalHolidays(holiday);

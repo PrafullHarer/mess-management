@@ -4,6 +4,7 @@ const staffSchema = mongoose.Schema({
     name: { type: String, required: true },
     role: { type: String, required: true },
     salary: { type: Number, required: true },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     status: { type: String, default: 'ACTIVE' }
 }, {
     timestamps: { createdAt: 'created_at', updatedAt: false },

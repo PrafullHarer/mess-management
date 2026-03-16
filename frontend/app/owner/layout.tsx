@@ -15,22 +15,22 @@ export default function OwnerLayout({
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && (!user || user.role !== 'OWNER')) {
+        if (!loading && (!user || !['OWNER', 'MANAGER'].includes(user.role))) {
             router.push('/login');
         }
     }, [user, loading, router]);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+            <div className="min-h-screen flex items-center justify-center bg-[#faeee7]">
                 <div className="w-6 h-6 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin" />
             </div>
         );
     }
-    if (!user || user.role !== 'OWNER') return null;
+    if (!user || !['OWNER', 'MANAGER'].includes(user.role)) return null;
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA]">
+        <div className="min-h-screen bg-[#faeee7]">
             <OwnerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             
             {/* Mobile Header */}

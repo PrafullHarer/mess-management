@@ -3,12 +3,12 @@
 
 @layer base {
   :root {
-    --accent: #C8FF00;
-    --bg: #FAFAFA;
+    --accent: #ff7b9b;
+    --bg: #faeee7;
     --fg: #0A0A0A;
-    --muted: #737373;
-    --border: #E5E5E5;
-    --card: #FFFFFF;
+    --muted: #8a7a72;
+    --border: #e8d6cc;
+    --card: #fff5f0;
   }
 
   body {

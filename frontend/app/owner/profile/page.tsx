@@ -107,7 +107,7 @@ export default function ProfilePage() {
                                     type="text"
                                     value={profileData.name}
                                     onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm font-medium"
+                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm font-medium"
                                     placeholder="Enter your name"
                                     required
                                 />
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                                     type="email"
                                     value={profileData.email}
                                     onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm font-medium"
+                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm font-medium"
                                     placeholder="your@email.com"
                                 />
                             </div>
@@ -136,7 +136,7 @@ export default function ProfilePage() {
                                     type="tel"
                                     value={profileData.mobile}
                                     onChange={(e) => setProfileData({ ...profileData, mobile: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm font-medium"
+                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm font-medium"
                                     placeholder="10-digit mobile"
                                     required
                                 />
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                                     type="password"
                                     value={passwordData.newPassword}
                                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm font-medium"
+                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm font-medium"
                                     placeholder="Min. 6 characters"
                                     required
                                     minLength={6}
@@ -201,7 +201,7 @@ export default function ProfilePage() {
                                     type="password"
                                     value={passwordData.confirmPassword}
                                     onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm font-medium"
+                                    className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm font-medium"
                                     placeholder="Repeat new password"
                                     required
                                 />

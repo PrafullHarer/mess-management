@@ -23,13 +23,20 @@ export default function AdminsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { push } = require('next/navigation').useRouter();
+
+    useEffect(() => {
+        if (currentUser && currentUser.role === 'MANAGER') {
+            push('/owner');
+        }
+    }, [currentUser, push]);
 
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         mobile: '',
         password: '',
-        role: 'OWNER' as 'OWNER' | 'MANAGER'
+        // role is forced to MANAGER by the backend
     });
 
     const fetchAdmins = useCallback(async () => {
@@ -86,7 +93,6 @@ export default function AdminsPage() {
             email: '',
             mobile: '',
             password: '',
-            role: 'OWNER'
         });
     };
 
@@ -145,7 +151,7 @@ export default function AdminsPage() {
                         {/* User Profile Info */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-neutral-900 flex items-center justify-center text-[#C8FF00] font-bold text-lg">
+                                <div className="w-12 h-12 rounded-full bg-neutral-900 flex items-center justify-center text-[#ff7b9b] font-bold text-lg">
                                     {admin.name[0].toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
@@ -186,7 +192,7 @@ export default function AdminsPage() {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-[#0A0A0A] flex items-center gap-2">
                                 <Shield className="w-5 h-5 text-indigo-600" />
-                                Create Admin User
+                                Create Sub-Admin User
                             </h2>
                             <button onClick={closeModal} className="p-1 hover:bg-neutral-100 rounded-lg">
                                 <X className="w-5 h-5 text-neutral-400" />
@@ -207,7 +213,7 @@ export default function AdminsPage() {
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                     <input
                                         placeholder="Admin name"
-                                        className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm"
+                                        className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         required
@@ -222,24 +228,13 @@ export default function AdminsPage() {
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                         <input
                                             placeholder="10-digit number"
-                                            className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm"
+                                            className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm"
                                             value={formData.mobile}
                                             onChange={e => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                                             maxLength={10}
                                             required
                                         />
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5 block">System Role</label>
-                                    <select
-                                        className="w-full py-3 px-4 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm appearance-none"
-                                        value={formData.role}
-                                        onChange={e => setFormData({ ...formData, role: e.target.value as 'OWNER' | 'MANAGER' })}
-                                    >
-                                        <option value="OWNER">OWNER (Full)</option>
-                                        <option value="MANAGER">MANAGER (Limited)</option>
-                                    </select>
                                 </div>
                             </div>
 
@@ -250,7 +245,7 @@ export default function AdminsPage() {
                                     <input
                                         type="email"
                                         placeholder="email@example.com"
-                                        className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#C8FF00] focus:border-[#C8FF00] outline-none transition-all text-sm"
+                                        className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-[#ff7b9b] focus:border-[#ff7b9b] outline-none transition-all text-sm"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -279,7 +274,7 @@ export default function AdminsPage() {
                                 disabled={saving}
                             >
                                 <Shield className={`w-5 h-5 group-hover:rotate-12 transition-transform ${saving ? 'animate-pulse' : ''}`} />
-                                {saving ? 'Registering...' : 'Register Administrator'}
+                                {saving ? 'Registering...' : 'Register Sub-Admin'}
                             </button>
                         </form>
                     </div>

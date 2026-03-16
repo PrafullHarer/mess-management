@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 
 const holidaySchema = mongoose.Schema({
     name: { type: String, default: '' },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     // Store as YYYY-MM-DD string to avoid timezone issues
-    dateStr: { type: String, required: true, unique: true },
+    dateStr: { type: String, required: true },
     // Slot: determines which meal plans are affected
     slot: {
         type: String,

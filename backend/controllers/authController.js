@@ -9,41 +9,36 @@ const login = asyncHandler(async (req, res) => {
 
     const user = await findUserByMobile(mobile);
 
-    // Debugging logs
     if (user) {
-        console.log(`[AUTH] User found: ${user._id}`);
-        console.log(`[AUTH] User Status: ${user.status}, isDeleted: ${user.isDeleted}`);
-        console.log(`[AUTH] Stored Hash starts with: ${user.passwordHash ? user.passwordHash.substring(0, 10) : 'MISSING'}`);
+        console.log(`[AUTH] User found: ${user._id} (Role: ${user.role})`);
     } else {
         console.log(`[AUTH] User ${mobile} returned NULL from findUserByMobile`);
     }
 
-    // Block if user is deleted or inactive
     if (user && user.isDeleted) {
-        console.log(`[AUTH] User ${mobile} is DELETED`);
         res.status(401);
         throw new Error('This account has been deactivated');
     }
 
     if (user && user.status === 'INACTIVE') {
-        console.log(`[AUTH] User ${mobile} is INACTIVE`);
         res.status(401);
         throw new Error('This account is inactive');
     }
 
     if (!user) {
-        console.log(`[AUTH] User ${mobile} NOT FOUND`);
         res.status(401);
         throw new Error('Invalid mobile or password');
     }
 
-    console.log(`[AUTH] User found: ${user._id} (Role: ${user.role})`);
-    console.log(`[AUTH] Comparing password...`);
     const isMatch = await bcrypt.compare(password, user.passwordHash);
 
     if (isMatch) {
         console.log(`[AUTH] Password Valid. Generating Token...`);
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign(
+            { id: user._id, role: user.role, messId: user.messId },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
         res.cookie('token', token, {
             httpOnly: true,
@@ -53,10 +48,16 @@ const login = asyncHandler(async (req, res) => {
         });
 
         res.json({
-            user: { id: user._id, name: user.name, role: user.role, mobile: user.mobile },
+            user: {
+                id: user._id,
+                name: user.name,
+                role: user.role,
+                mobile: user.mobile,
+                messId: user.messId || null
+            },
             token: token
         });
-        console.log(`[AUTH] Login Successful for ${mobile}`);
+        console.log(`[AUTH] Login Successful for ${mobile} (Role: ${user.role})`);
     } else {
         console.log(`[AUTH] Password INVALID for ${mobile}`);
         res.status(401);
@@ -72,7 +73,8 @@ const getMe = asyncHandler(async (req, res) => {
             name: user.name,
             role: user.role,
             mobile: user.mobile,
-            email: user.email || ''
+            email: user.email || '',
+            messId: user.messId || null
         });
     } else {
         res.status(404);
@@ -96,6 +98,7 @@ const updateProfile = asyncHandler(async (req, res) => {
             email: updatedUser.email,
             mobile: updatedUser.mobile,
             role: updatedUser.role,
+            messId: updatedUser.messId || null
         });
     } else {
         res.status(404);
@@ -126,25 +129,28 @@ const updatePassword = asyncHandler(async (req, res) => {
     res.json({ message: 'Password updated successfully' });
 });
 
+// Register sub-admin (MANAGER) — scoped to the owner's mess
 const registerAdmin = asyncHandler(async (req, res) => {
     const { name, email, mobile, password, role } = req.body;
 
     if (!name || !name.trim()) {
-        res.status(400);
-        throw new Error('Name is required');
+        res.status(400); throw new Error('Name is required');
     }
     if (!mobile || mobile.replace(/\D/g, '').length !== 10) {
-        res.status(400);
-        throw new Error('Valid 10-digit mobile number is required');
+        res.status(400); throw new Error('Valid 10-digit mobile number is required');
     }
     if (!password) {
-        res.status(400);
-        throw new Error('Password is required');
+        res.status(400); throw new Error('Password is required');
     }
 
-    if (await findUserByMobile(mobile.replace(/\D/g, ''))) {
-        res.status(400);
-        throw new Error('User with this mobile already exists');
+    // Only owners can create sub-admins (MANAGER), not other owners
+    if (req.user.role !== 'OWNER' && req.user.role !== 'SUPER_ADMIN') {
+        res.status(403); throw new Error('Only owners can create sub-admins');
+    }
+
+    const cleanMobile = mobile.replace(/\D/g, '');
+    if (await findUserByMobile(cleanMobile)) {
+        res.status(400); throw new Error('User with this mobile already exists');
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -153,9 +159,10 @@ const registerAdmin = asyncHandler(async (req, res) => {
     const admin = await createUser({
         name: name.trim(),
         email: email || '',
-        mobile: mobile.replace(/\D/g, ''),
+        mobile: cleanMobile,
         passwordHash: hashedPassword,
-        role: role || 'OWNER',
+        role: 'MANAGER', // Sub-admins are always MANAGER role
+        messId: req.user.messId, // Scope to the owner's mess
         status: 'ACTIVE'
     });
 
@@ -164,15 +171,24 @@ const registerAdmin = asyncHandler(async (req, res) => {
         name: admin.name,
         email: admin.email,
         mobile: admin.mobile,
-        role: admin.role
+        role: admin.role,
+        messId: admin.messId
     });
 });
 
+// Get admins for this mess only
 const getAdmins = asyncHandler(async (req, res) => {
-    const admins = await User.find({
+    const query = {
         role: { $in: ['OWNER', 'MANAGER'] },
         isDeleted: false
-    }).sort({ createdAt: -1 });
+    };
+
+    // Scope to mess if not super admin
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.messId) {
+        query.messId = req.user.messId;
+    }
+
+    const admins = await User.find(query).sort({ createdAt: -1 });
 
     res.json(admins.map(a => ({
         id: a._id,
@@ -180,6 +196,7 @@ const getAdmins = asyncHandler(async (req, res) => {
         email: a.email,
         mobile: a.mobile,
         role: a.role,
+        messId: a.messId,
         createdAt: a.createdAt
     })));
 });
@@ -191,6 +208,15 @@ const removeAdmin = asyncHandler(async (req, res) => {
     if (id === req.user.id.toString()) {
         res.status(400);
         throw new Error('You cannot remove your own administrative access');
+    }
+
+    // Verify the admin belongs to the same mess (unless super admin)
+    if (req.user.role !== 'SUPER_ADMIN') {
+        const targetUser = await findUserById(id);
+        if (!targetUser || (targetUser.messId && targetUser.messId.toString() !== req.user.messId)) {
+            res.status(403);
+            throw new Error('You can only remove admins from your own mess');
+        }
     }
 
     await deleteUser(id);

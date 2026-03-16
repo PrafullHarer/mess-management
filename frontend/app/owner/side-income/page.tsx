@@ -271,7 +271,7 @@ export default function SideIncomePage() {
 
                     <div className="bg-[#0A0A0A] text-white px-6 py-3 rounded-xl">
                         <span className="text-sm opacity-70">Total for {MONTHS[selectedMonth]}: </span>
-                        <span className="text-xl font-bold text-[#C8FF00]">₹{(stats?.grandTotal || 0).toLocaleString()}</span>
+                        <span className="text-xl font-bold text-[#ff7b9b]">₹{(stats?.grandTotal || 0).toLocaleString()}</span>
                     </div>
                 </div>
             </div>

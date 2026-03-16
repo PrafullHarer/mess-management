@@ -6,7 +6,9 @@ const PDFDocument = require('pdfkit');
 
 // Always keep generating only for students who have a pending amount
 const getBills = asyncHandler(async (req, res) => {
-    const students = await User.find({ role: 'STUDENT', isDeleted: false }).sort({ name: 1 });
+    const query = { role: 'STUDENT', isDeleted: false };
+    if (req.user.messId) query.messId = req.user.messId;
+    const students = await User.find(query).sort({ name: 1 });
     console.log(`[getBills] Found ${students.length} students. Checking dues...`);
     
     const now = new Date();

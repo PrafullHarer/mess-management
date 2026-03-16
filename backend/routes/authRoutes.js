@@ -1,7 +1,7 @@
 const express = require('express');
 const { validate, schemas } = require('../utils/validation');
 const { login, getMe, updateProfile, updatePassword, getAdmins, registerAdmin, removeAdmin } = require('../controllers/authController');
-const { protect, ownerOnly } = require('../middleware/authMiddleware');
+const { protect, ownerOnly, messStaffOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 

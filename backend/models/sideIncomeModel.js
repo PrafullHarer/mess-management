@@ -7,6 +7,7 @@ const sideIncomeSchema = mongoose.Schema({
         required: true,
         enum: ['SNACKS', 'PANI_PURI', 'CUSTOM']
     },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     amount: { type: Number, required: true },
     description: { type: String, default: '' }, // Required for CUSTOM category
     // Store as YYYY-MM-DD string to avoid timezone issues

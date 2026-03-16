@@ -9,8 +9,10 @@ const userSchema = mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['OWNER', 'STUDENT', 'MANAGER'],
+        enum: ['SUPER_ADMIN', 'OWNER', 'STUDENT', 'MANAGER'],
     },
+    // Links user to a specific mess (null for SUPER_ADMIN)
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', default: null },
     status: { type: String, default: 'ACTIVE' },
 
     // ===== New Plan-Based Fields (from actions.js/calculations.js) =====
@@ -71,8 +73,10 @@ const createUser = async (userData) => {
     return await user.save();
 };
 
-const getAllStudents = async () => {
-    return await User.find({ role: 'STUDENT', isDeleted: false }).sort({ name: 1 });
+const getAllStudents = async (messId = null) => {
+    const query = { role: 'STUDENT', isDeleted: false };
+    if (messId) query.messId = messId;
+    return await User.find(query).sort({ name: 1 });
 };
 
 const updateUser = async (id, updates) => {

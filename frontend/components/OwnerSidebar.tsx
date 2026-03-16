@@ -53,6 +53,11 @@ export default function OwnerSidebar({ isOpen, onClose }: SidebarProps) {
 
                 <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                     {menuItems.map((item) => {
+                        // Sub-admins (MANAGER) cannot see the Admins tab
+                        if (item.name === 'Admins' && user?.role === 'MANAGER') {
+                            return null;
+                        }
+
                         const isActive = pathname === item.href;
                         const Icon = item.icon;
                         return (
@@ -63,7 +68,7 @@ export default function OwnerSidebar({ isOpen, onClose }: SidebarProps) {
                                     if (window.innerWidth < 1024) onClose();
                                 }}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
-                                    ? 'bg-[#C8FF00] text-[#0A0A0A]'
+                                    ? 'bg-[#ff7b9b] text-white'
                                     : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
                                     }`}
                             >
@@ -77,7 +82,7 @@ export default function OwnerSidebar({ isOpen, onClose }: SidebarProps) {
             <div className="p-4 border-t border-neutral-800 space-y-2">
                 {/* User Profile Section */}
                 <div className="flex items-center gap-3 px-3 py-2 bg-neutral-900/50 rounded-xl border border-neutral-800/50">
-                    <div className="w-8 h-8 rounded-full bg-[#C8FF00] flex items-center justify-center text-[#0A0A0A] font-bold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#ff7b9b] flex items-center justify-center text-white font-bold text-xs shrink-0">
                         {user?.name?.[0]?.toUpperCase() || 'A'}
                     </div>
                     <div className="flex-1 min-w-0">

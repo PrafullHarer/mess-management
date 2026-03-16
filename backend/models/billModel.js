@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const billSchema = mongoose.Schema({
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mess', required: true },
     month: { type: String, required: true },
     year: { type: Number, required: true },
     baseAmount: { type: Number, required: true },
