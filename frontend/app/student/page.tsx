@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import API from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { CreditCard, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { CreditCard, CheckCircle, AlertCircle, Download, CalendarRange, Clock, Coffee, LogOut, ArrowRight, IndianRupee, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface AbsentRecord {
@@ -15,20 +15,25 @@ interface BillBreakdown {
     meals_present?: number;
     attendance_days?: number;
     absent_dates?: (string | AbsentRecord)[];
+    joined_at?: string;
+    end_date?: string;
 }
 
 interface Bill {
-    id: number;
+    id: string;
+    student_id: string;
     month: string;
     year: number;
     amount: string;
     status: 'PAID' | 'PENDING';
-    generated_at: string;
+    generatedAt: string;
+    upiId?: string;
+    payeeName?: string;
     breakdown?: BillBreakdown;
 }
 
 export default function StudentDashboard() {
-    const { user, logout } = useAuth();
+    const { user, logout, loading: authLoading } = useAuth();
     const [bills, setBills] = useState<Bill[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
@@ -45,38 +50,55 @@ export default function StudentDashboard() {
     };
 
     useEffect(() => {
-        if (user && user.role !== 'STUDENT') {
-            router.push('/login');
+        if (!authLoading) {
+            if (!user || user.role !== 'STUDENT') {
+                router.push('/login');
+            } else {
+                fetchBills();
+            }
         }
-        fetchBills();
-    }, [user, router]);
+    }, [user, router, authLoading]);
 
     const handlePay = (bill: Bill) => {
-        const upiId = "prafullharer@slc";
-        const payeeName = "Prafull Harer";
+        const upiId = bill.upiId || "prafullharer@slc";
+        const payeeName = bill.payeeName || "Prafull Harer";
         const amount = parseFloat(bill.amount);
 
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=Mess-Bill-${bill.month}-${bill.year}`;
         window.location.href = upiLink;
     };
 
-    const handlePayAll = () => {
-        const totalAmount = pendingBills.reduce((sum, bill) => sum + parseFloat(bill.amount), 0);
-        const upiId = "prafullharer@slc";
-        const payeeName = "Prafull Harer";
+    const pendingBills = bills.filter(b => b.status?.toUpperCase() === 'PENDING');
+    const historyBills = bills.filter(b => b.status?.toUpperCase() === 'PAID');
+    const totalPending = pendingBills.reduce((sum, bill) => sum + parseFloat(bill.amount), 0);
 
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${totalAmount}&cu=INR&tn=Mess-All-Dues`;
+    const handlePayAll = () => {
+        const firstBill = pendingBills[0];
+        const upiId = firstBill?.upiId || "prafullharer@slc";
+        const payeeName = firstBill?.payeeName || "Prafull Harer";
+
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${totalPending}&cu=INR&tn=Mess-All-Dues`;
         window.location.href = upiLink;
     };
 
     const formatDate = (dateStr: string) => {
-        const [year, month, day] = dateStr.split('-');
-        return `${day}/${month}/${year}`;
+        if (!dateStr || dateStr === 'N/A') return 'N/A';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                 const [year, month, day] = dateStr.split('-');
+                 return `${day}/${month}/${year}`;
+            }
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch (e) {
+            return dateStr;
+        }
     };
 
-    const handleDownload = async (billId: number, month: string, year: number) => {
+    const handleDownload = async (billId: string, month: string, year: number) => {
         try {
-            const response = await API.get(`/bills/${billId}/download`, {
+            const idToDownload = billId.replace('-pending', '').replace('-paid', '');
+            const response = await API.get(`/bills/${idToDownload}/download`, {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -92,149 +114,220 @@ export default function StudentDashboard() {
         }
     };
 
-    const pendingBills = bills.filter(b => b.status?.toUpperCase() === 'PENDING');
-    const historyBills = bills.filter(b => b.status?.toUpperCase() === 'PAID');
-    const totalPending = pendingBills.reduce((sum, bill) => sum + parseFloat(bill.amount), 0);
+    const upcomingHolidays = user?.studentHolidays?.filter(d => new Date(d) >= new Date(new Date().setHours(0,0,0,0))) || [];
+    
+    // Dynamic fallback fetching from DB generated bills if server cache hasn't updated yet
+    const joinedAtStr = user?.joinedAt || bills[0]?.breakdown?.joined_at || 'N/A';
+    const endDateStr = user?.endDate || bills[0]?.breakdown?.end_date || 'N/A';
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+            <div className="min-h-screen bg-[#faeee7] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin" />
             </div>
         );
     }
 
+    if (!user || user.role !== 'STUDENT') return null;
+
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            {/* Header */}
-            <header className="bg-white shadow-sm p-4 sticky top-0 z-10">
-                <div className="flex justify-between items-center max-w-lg mx-auto">
-                    <div>
-                        <h1 className="text-lg font-bold text-gray-900">Hi, {user?.name}</h1>
-                        <p className="text-xs text-gray-500">Student Dashboard</p>
-                    </div>
-                    <button onClick={logout} className="text-sm text-red-600 font-medium">
-                        Sign Out
-                    </button>
-                </div>
-            </header>
-
-            <main className="max-w-lg mx-auto p-4 space-y-6">
-
-                {/* Total Dues Card */}
-                {pendingBills.length > 0 && (
-                    <div className="bg-gray-900 text-white p-5 rounded-xl">
-                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total Pending</p>
-                        <p className="text-3xl font-bold mb-3">₹{totalPending.toLocaleString()}</p>
-                        <button
-                            onClick={handlePayAll}
-                            className="w-full py-2.5 rounded-lg bg-white text-gray-900 font-semibold text-sm flex items-center justify-center gap-2"
-                        >
-                            <CreditCard className="w-4 h-4" />
-                            Pay All Dues
-                        </button>
-                    </div>
-                )}
-
-                {/* Pending Bills */}
-                <section>
-                    <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                        Pending Dues
-                    </h2>
-                    {pendingBills.length === 0 ? (
-                        <div className="bg-white p-6 rounded-xl border border-gray-100 text-center">
-                            <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                            <p className="text-gray-900 font-medium">All caught up!</p>
-                            <p className="text-sm text-gray-500">No pending bills.</p>
+        <div className="space-y-10 max-w-7xl mx-auto">
+                    
+                    {/* Welcome Header */}
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-neutral-500 mb-1">
+                                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            </p>
+                            <h1 className="text-3xl font-bold tracking-tight text-[#0A0A0A]">My Dashboard</h1>
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {pendingBills.map(bill => (
-                                <div key={bill.id} className="bg-white p-4 rounded-xl border border-gray-100">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div>
-                                            <p className="font-semibold text-gray-900">{bill.month} {bill.year}</p>
-                                            <p className="text-xs text-amber-600">Due Now</p>
-                                        </div>
-                                        <p className="text-xl font-bold text-gray-900">₹{bill.amount}</p>
+                    </div>
+
+                    {/* Primary Stats Grid (Matching Admin Das) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Start Date Card */}
+                        <div className="card transition-all duration-150 bg-emerald-50 border-emerald-100">
+                            <div className="flex items-center gap-2 mb-4 text-emerald-600">
+                                <CalendarRange className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Mess Started On</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
+                                {formatDate(joinedAtStr)}
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Your current cycle start date</p>
+                        </div>
+
+                        {/* End Date Card */}
+                        <div className="card transition-all duration-150 bg-orange-50 border-orange-100">
+                            <div className="flex items-center gap-2 mb-4 text-orange-600">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Valid Until</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
+                                {formatDate(endDateStr)}
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Renews or expires on this date</p>
+                        </div>
+                        
+                        <div className="card transition-all duration-150 bg-[#0A0A0A] text-white border-[#0A0A0A]">
+                            <div className="flex items-center gap-2 mb-4 text-neutral-400">
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Total Pending Dues</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#ff7b9b]">
+                                ₹{totalPending.toLocaleString()}
+                            </p>
+                            {pendingBills.length > 0 && (
+                                <button
+                                    onClick={handlePayAll}
+                                    className="w-full mt-4 py-2.5 rounded-lg bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 hover:bg-neutral-100 transition-all"
+                                >
+                                    Pay All Dues <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Pending Bills Row */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="card p-0 overflow-hidden bg-transparent border-none shadow-none">
+                                <h2 className="text-xl font-bold text-[#0A0A0A] mb-4 flex items-center gap-2">
+                                    <IndianRupee className="w-5 h-5" /> Pending Approvals
+                                </h2>
+                                
+                                {pendingBills.length === 0 ? (
+                                    <div className="card text-center py-10 bg-white">
+                                        <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-3" />
+                                        <p className="font-bold text-neutral-900">All caught up!</p>
+                                        <p className="text-sm text-neutral-500 mt-1">You have no pending invoices.</p>
                                     </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {pendingBills.map(bill => (
+                                            <div key={bill.id} className="card bg-white p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+                                                <div>
+                                                    <p className="font-bold text-neutral-900 text-lg">{bill.month} {bill.year}</p>
+                                                    <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-md inline-block mt-1">Due Now</span>
+                                                </div>
 
-                                    {/* Absent meals indicator */}
-                                    {bill.breakdown?.meals_absent !== undefined && bill.breakdown.meals_absent > 0 && (
-                                        <div className="flex items-center gap-2 mb-3 p-2 bg-amber-50 rounded-lg">
-                                            <AlertCircle className="w-4 h-4 text-amber-600" />
-                                            <span className="text-xs text-amber-700">
-                                                {bill.breakdown.meals_absent} meal{bill.breakdown.meals_absent !== 1 ? 's' : ''} absent this month
-                                            </span>
-                                        </div>
-                                    )}
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                                    <p className="text-2xl font-black text-neutral-900 tracking-tight">₹{bill.amount}</p>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleDownload(bill.id, bill.month, bill.year)}
+                                                            className="px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-600 font-bold text-xs flex items-center justify-center hover:bg-neutral-100 transition-colors"
+                                                            title="Download Invoice"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handlePay(bill)}
+                                                            className="px-6 py-2.5 rounded-xl bg-[#0A0A0A] text-white font-bold text-xs flex items-center justify-center gap-2 hover:bg-neutral-800 transition-colors shadow-sm"
+                                                        >
+                                                            <CreditCard className="w-4 h-4" /> Pay
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => handleDownload(bill.id, bill.month, bill.year)}
-                                            className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-700 font-medium text-sm flex items-center justify-center gap-2 hover:bg-gray-50"
-                                        >
-                                            <Download className="w-4 h-4" /> PDF
-                                        </button>
-                                        <button
-                                            onClick={() => handlePay(bill)}
-                                            className="flex-[2] py-2 rounded-lg bg-gray-900 text-white font-medium text-sm flex items-center justify-center gap-2"
-                                        >
-                                            <CreditCard className="w-4 h-4" /> Pay Now
-                                        </button>
+                            {/* Payment History */}
+                            {historyBills.length > 0 && (
+                                <div className="card p-0 overflow-hidden bg-transparent border-none shadow-none">
+                                    <h2 className="text-xl font-bold text-[#0A0A0A] mb-4 flex items-center gap-2">
+                                        <CheckCircle className="w-5 h-5" /> Recent Payments
+                                    </h2>
+                                    
+                                    <div className="space-y-3">
+                                        {historyBills.map(bill => (
+                                            <div key={bill.id} className="card bg-white p-4 flex items-center justify-between border-l-4 border-l-emerald-500 hover:border-l-[#ffb88c] transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 text-emerald-600">
+                                                        <CheckCircle className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-neutral-900 text-sm">{bill.month} {bill.year}</p>
+                                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Paid Successfully</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-4">
+                                                    <span className="font-black text-neutral-900 text-base">₹{bill.amount}</span>
+                                                    <button
+                                                        onClick={() => handleDownload(bill.id, bill.month, bill.year)}
+                                                        className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                                                        title="Download PDF"
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
+                            )}
                         </div>
-                    )}
-                </section>
 
-                {/* Payment History */}
-                <section>
-                    <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                        Payment History
-                    </h2>
-                    {historyBills.length === 0 ? (
-                        <p className="text-center text-sm text-gray-400 py-4">No payment history.</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {historyBills.map(bill => (
-                                <div key={bill.id} className="bg-white p-4 rounded-xl border border-gray-100">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{bill.month} {bill.year}</p>
-                                            <p className="text-xs text-green-600">Paid</p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-semibold text-gray-600">₹{bill.amount}</span>
-                                            <button
-                                                onClick={() => handleDownload(bill.id, bill.month, bill.year)}
-                                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                                                title="Download Receipt"
-                                            >
-                                                <Download className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
+                        {/* My Holidays Section */}
+                        <div className="space-y-3 h-full">
+                            <h2 className="text-xl font-bold text-[#0A0A0A] mb-4 flex items-center gap-2">
+                                <Coffee className="w-5 h-5" /> Leaves Taken
+                            </h2>
 
-                                    {/* Attendance summary for paid bills */}
-                                    {bill.breakdown && (
-                                        <div className="mt-2 pt-2 border-t border-gray-100 flex gap-4 text-xs">
-                                            <span className="text-green-600">
-                                                ✓ Present: {bill.breakdown.meals_present || 0}
-                                            </span>
-                                            <span className="text-amber-600">
-                                                ✗ Absent: {bill.breakdown.meals_absent || 0}
-                                            </span>
+                            <div className="card flex flex-col h-[400px] overflow-hidden bg-white">
+                                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                                    {(user?.studentHolidays?.length || 0) === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                            <div className="w-12 h-12 bg-neutral-50 text-neutral-300 rounded-full flex items-center justify-center mb-3">
+                                                <Clock className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-neutral-900 text-sm font-bold">No holidays logged</p>
+                                            <p className="text-xs font-medium text-neutral-400 mt-1">Take a break soon!</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-5">
+                                            {upcomingHolidays.length > 0 && (
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-3 px-1">Upcoming Holidays</p>
+                                                    <div className="flex flex-col gap-2">
+                                                        {upcomingHolidays.map((d, i) => (
+                                                            <div key={`upcoming-${i}`} className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-xl border border-orange-100/50">
+                                                                <CalendarRange className="w-4 h-4 text-orange-600" />
+                                                                <span className="text-[#0A0A0A] font-bold text-xs">{formatDate(d)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div>
+                                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-3 px-1">All Recorded History</p>
+                                                <div className="flex flex-col gap-2">
+                                                    {[...(user?.studentHolidays || [])].sort((a,b) => new Date(b).getTime() - new Date(a).getTime()).map((d, i) => {
+                                                        const isFuture = new Date(d) >= new Date(new Date().setHours(0,0,0,0));
+                                                        return isFuture ? null : (
+                                                            <div key={`past-${i}`} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <FileText className="w-4 h-4 text-neutral-400" />
+                                                                    <span className="text-neutral-600 font-bold text-xs">{formatDate(d)}</span>
+                                                                </div>
+                                                                <CheckCircle className="w-3.5 h-3.5 text-neutral-300" />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    )}
-                </section>
-
-            </main>
+                    </div>
         </div>
     );
 }

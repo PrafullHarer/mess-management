@@ -1,13 +1,16 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { User } = require('../models/userModel');
+const { Mess } = require('../models/messModel');
 const PDFDocument = require('pdfkit');
-
-
 
 // Always keep generating only for students who have a pending amount
 const getBills = asyncHandler(async (req, res) => {
     const query = { role: 'STUDENT', isDeleted: false };
-    if (req.user.messId) query.messId = req.user.messId;
+    if (req.user.role === 'STUDENT') {
+        query._id = req.user.id;
+    } else if (req.user.messId) {
+        query.messId = req.user.messId;
+    }
     const students = await User.find(query).sort({ name: 1 });
     console.log(`[getBills] Found ${students.length} students. Checking dues...`);
     
@@ -15,31 +18,78 @@ const getBills = asyncHandler(async (req, res) => {
     const currentMonth = now.toLocaleString('default', { month: 'long' });
     const currentYear = now.getFullYear();
 
+    let ownerUpiId = "prafullharer@slc";
+    let ownerName = "Prafull Harer";
+
+    if (req.user.messId) {
+        const mess = await Mess.findById(req.user.messId).populate('ownerId');
+        if (mess && mess.ownerId) {
+            ownerUpiId = mess.ownerId.upiId || ownerUpiId;
+            ownerName = mess.ownerId.name || ownerName;
+        }
+    }
+
     const bills = students.map(s => {
         const amount = Number(s.amount) || 0;
         const paid = Number(s.paid) || 0;
         const pendingAmount = amount - paid;
         console.log(`[getBills] Student ${s.name}: amount=${s.amount}, paid=${s.paid}, pending=${pendingAmount}`);
 
-        // Only return true 'pending' dues
-        if (pendingAmount <= 0) return null;
+        let studentBills = [];
 
-        return {
-            id: s._id.toString(), // We use student ID as the bill ID hook
-            student_id: s._id.toString(),
-            student_name: s.name,
-            mobile: s.mobile,
-            month: currentMonth,
-            year: currentYear,
-            amount: pendingAmount.toString(),
-            status: 'PENDING',
-            generatedAt: now.toISOString(),
-            breakdown: {
-                joined_at: s.joinedAt ? (typeof s.joinedAt === 'string' ? s.joinedAt : s.joinedAt.toISOString().split('T')[0]) : 'N/A',
-                meal_slot: s.plan || 'Cycle'
-            }
+        const breakdown = {
+            joined_at: s.joinedAt ? (typeof s.joinedAt === 'string' ? s.joinedAt : s.joinedAt.toISOString().split('T')[0]) : 'N/A',
+            meal_slot: s.plan || 'Cycle',
+            end_date: (() => {
+                if (!s.joinedAt) return 'N/A';
+                const d = new Date(s.joinedAt);
+                d.setDate(d.getDate() + 30);
+                return d.toISOString().split('T')[0];
+            })()
         };
-    }).filter(Boolean);
+
+        if (pendingAmount > 0) {
+            studentBills.push({
+                id: s._id.toString() + '-pending',
+                student_id: s._id.toString(),
+                student_name: s.name,
+                mobile: s.mobile,
+                month: currentMonth,
+                year: currentYear,
+                amount: pendingAmount.toString(),
+                status: 'PENDING',
+                generatedAt: now.toISOString(),
+                upiId: ownerUpiId,
+                payeeName: ownerName,
+                breakdown
+            });
+        }
+
+        if (paid > 0) {
+            let pMonth = currentMonth;
+            let pYear = currentYear;
+            // Best effort to extract month from payment notes if available
+            if (s.paymentNotes && s.paymentNotes.includes('[')) {
+                // simple heuristic
+            }
+            studentBills.push({
+                id: s._id.toString() + '-paid',
+                student_id: s._id.toString(),
+                student_name: s.name,
+                mobile: s.mobile,
+                month: currentMonth,
+                year: currentYear,
+                amount: paid.toString(),
+                status: 'PAID',
+                generatedAt: now.toISOString(),
+                upiId: ownerUpiId,
+                payeeName: ownerName,
+                breakdown
+            });
+        }
+
+        return studentBills;
+    }).flat();
 
     res.json(bills);
 });
@@ -90,8 +140,17 @@ const downloadBillPDF = asyncHandler(async (req, res) => {
     const invoiceNo = `INV-${currentYear}-${currentMonth.toUpperCase().slice(0, 3)}-${student.mobile.slice(-4)}`;
     const billDate = now.toLocaleDateString('en-IN');
 
-    const upiId = "prafullharer@slc";
-    const payeeName = "Prafull Harer";
+    let upiId = "prafullharer@slc";
+    let payeeName = "Prafull Harer";
+
+    if (student.messId) {
+        const mess = await Mess.findById(student.messId).populate('ownerId');
+        if (mess && mess.ownerId) {
+            upiId = mess.ownerId.upiId || upiId;
+            payeeName = mess.ownerId.name || payeeName;
+        }
+    }
+
     const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${pendingAmount}&cu=INR&tn=Mess-Bill-${currentMonth}-${currentYear}`;
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -233,7 +292,7 @@ const downloadBillPDF = asyncHandler(async (req, res) => {
             .text('Click here to Pay Now', 70, footerY + 55, { link: upiLink, underline: true });
 
         doc.fontSize(8).fillColor(colors.textLight)
-            .text('Please verify the payee name "Prafull Harer" before proceeding.', 70, footerY + 75);
+            .text(`Please verify the payee name "${payeeName}" before proceeding.`, 70, footerY + 75);
     }
 
     doc.end();

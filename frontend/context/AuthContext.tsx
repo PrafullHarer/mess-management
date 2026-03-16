@@ -9,7 +9,14 @@ interface User {
     role: 'SUPER_ADMIN' | 'OWNER' | 'STUDENT' | 'MANAGER';
     mobile: string;
     email?: string;
+    upiId?: string;
+    studentHolidays?: string[];
     messId?: string | null;
+    joinedAt?: string;
+    plan?: string;
+    amount?: number;
+    paid?: number;
+    endDate?: string;
 }
 
 interface AuthContextType {

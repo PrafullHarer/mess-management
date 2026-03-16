@@ -2,6 +2,14 @@ const bcrypt = require('bcryptjs');
 const asyncHandler = require('../utils/asyncHandler');
 const { User, createUser, findUserByMobile } = require('../models/userModel');
 const { Mess, createMess, getAllMesses, getMessById, updateMess } = require('../models/messModel');
+const { DailyEntry } = require('../models/dailyEntryModel');
+const { Expense } = require('../models/expenseModel');
+const { SideIncome } = require('../models/sideIncomeModel');
+const { Holiday } = require('../models/holidayModel');
+const { Attendance } = require('../models/attendanceModel');
+const { Bill } = require('../models/billModel');
+const { MealRequest } = require('../models/mealRequestModel');
+const { Staff, StaffPayment } = require('../models/staffModel');
 
 // ========================
 // MESS MANAGEMENT
@@ -98,8 +106,8 @@ const editMess = asyncHandler(async (req, res) => {
     res.json(updated);
 });
 
-// DELETE /api/super-admin/messes/:id — Suspend a mess
-const suspendMess = asyncHandler(async (req, res) => {
+// DELETE /api/super-admin/messes/:id — Delete a mess and all its data
+const deleteMess = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     const mess = await getMessById(id);
@@ -107,16 +115,24 @@ const suspendMess = asyncHandler(async (req, res) => {
         res.status(404); throw new Error('Mess not found');
     }
 
-    // Suspend the mess
-    await updateMess(id, { status: 'SUSPENDED' });
+    // Delete all linked records
+    await DailyEntry.deleteMany({ messId: id });
+    await Expense.deleteMany({ messId: id });
+    await SideIncome.deleteMany({ messId: id });
+    await Holiday.deleteMany({ messId: id });
+    await Attendance.deleteMany({ messId: id });
+    await Bill.deleteMany({ messId: id });
+    await MealRequest.deleteMany({ messId: id });
+    await Staff.deleteMany({ messId: id });
+    await StaffPayment.deleteMany({ messId: id });
 
-    // Deactivate all users in this mess
-    await User.updateMany(
-        { messId: id, isDeleted: false },
-        { status: 'INACTIVE' }
-    );
+    // Hard delete all users in this mess so they cannot login
+    await User.deleteMany({ messId: id });
 
-    res.json({ message: `Mess "${mess.name}" suspended and all users deactivated` });
+    // Finally, delete the mess itself
+    await Mess.findByIdAndDelete(id);
+
+    res.json({ message: `Mess "${mess.name}" and all related data completely deleted.` });
 });
 
 // ========================
@@ -177,12 +193,103 @@ const getPlatformStats = asyncHandler(async (req, res) => {
     });
 });
 
+// ========================
+// SYSTEM HEALTH
+// ========================
+const mongoose = require('mongoose');
+const os = require('os');
+
+const getSystemHealth = asyncHandler(async (req, res) => {
+    const healthData = {};
+
+    // 1. Database Connection
+    const dbState = mongoose.connection.readyState;
+    const dbStateMap = { 0: 'Disconnected', 1: 'Connected', 2: 'Connecting', 3: 'Disconnecting' };
+    healthData.database = {
+        status: dbStateMap[dbState] || 'Unknown',
+        healthy: dbState === 1,
+        host: mongoose.connection.host || 'N/A',
+        name: mongoose.connection.name || 'N/A',
+    };
+
+    // 2. DB Ping (latency test)
+    try {
+        const pingStart = Date.now();
+        await mongoose.connection.db.admin().ping();
+        healthData.database.pingMs = Date.now() - pingStart;
+    } catch (err) {
+        healthData.database.pingMs = null;
+        healthData.database.pingError = err.message;
+    }
+
+    // 3. Collection Stats
+    try {
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        const collectionStats = [];
+        for (const col of collections) {
+            try {
+                const stats = await mongoose.connection.db.collection(col.name).estimatedDocumentCount();
+                const dataSize = await mongoose.connection.db.collection(col.name).aggregate([
+                    { $group: { _id: null, size: { $sum: { $bsonSize: '$$ROOT' } } } }
+                ]).toArray();
+                collectionStats.push({
+                    name: col.name,
+                    documentCount: stats,
+                    sizeBytes: dataSize[0]?.size || 0,
+                });
+            } catch {
+                collectionStats.push({ name: col.name, documentCount: 'Error', sizeBytes: 0 });
+            }
+        }
+        healthData.collections = collectionStats;
+        healthData.totalCollections = collections.length;
+    } catch (err) {
+        healthData.collections = [];
+        healthData.collectionsError = err.message;
+    }
+
+    // 4. Server Info
+    const memUsage = process.memoryUsage();
+    healthData.server = {
+        uptime: process.uptime(),
+        nodeVersion: process.version,
+        platform: `${os.platform()} ${os.arch()}`,
+        mongooseVersion: mongoose.version,
+        memory: {
+            heapUsed: memUsage.heapUsed,
+            heapTotal: memUsage.heapTotal,
+            rss: memUsage.rss,
+            external: memUsage.external,
+        },
+        cpuCount: os.cpus().length,
+        totalSystemMemory: os.totalmem(),
+        freeSystemMemory: os.freemem(),
+        loadAvg: os.loadavg(),
+    };
+
+    // 5. Environment Checks
+    healthData.environment = {
+        nodeEnv: process.env.NODE_ENV || 'development',
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        port: process.env.PORT || 5000,
+        isVercel: !!process.env.VERCEL,
+    };
+
+    // 6. Overall Status
+    healthData.status = healthData.database.healthy ? 'healthy' : 'degraded';
+    healthData.timestamp = new Date().toISOString();
+
+    res.json(healthData);
+});
+
 module.exports = {
     listMesses,
     createMessWithOwner,
     editMess,
-    suspendMess,
+    deleteMess,
     listOwners,
     removeOwner,
-    getPlatformStats
+    getPlatformStats,
+    getSystemHealth
 };

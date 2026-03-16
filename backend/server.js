@@ -16,6 +16,7 @@ const holidayRoutes = require('./routes/holidayRoutes');
 const sideIncomeRoutes = require('./routes/sideIncomeRoutes');
 const dailyEntryRoutes = require('./routes/dailyEntryRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use('/api/holidays', holidayRoutes);
 app.use('/api/side-income', sideIncomeRoutes);
 app.use('/api/daily-entries', dailyEntryRoutes);
 app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/public', publicRoutes);
 
 // Error Handler (MUST be last)
 const { errorHandler } = require('./middleware/errorMiddleware');

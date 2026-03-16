@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('../utils/asyncHandler');
 const { findUserByMobile, findUserById, createUser, User, deleteUser } = require('../models/userModel');
+const { Holiday } = require('../models/holidayModel');
+const { messEndDate, fmtDate } = require('../utils/calculations');
 
 const login = asyncHandler(async (req, res) => {
     const { mobile, password } = req.body;
@@ -53,7 +55,12 @@ const login = asyncHandler(async (req, res) => {
                 name: user.name,
                 role: user.role,
                 mobile: user.mobile,
-                messId: user.messId || null
+                upiId: user.upiId || '',
+                messId: user.messId || null,
+                joinedAt: user.joinedAt || null,
+                plan: user.plan || 'Cycle',
+                amount: user.amount || 0,
+                paid: user.paid || 0
             },
             token: token
         });
@@ -68,14 +75,33 @@ const login = asyncHandler(async (req, res) => {
 const getMe = asyncHandler(async (req, res) => {
     const user = await findUserById(req.user.id);
     if (user) {
-        res.json({
+        const payload = {
             id: user.id,
             name: user.name,
             role: user.role,
             mobile: user.mobile,
             email: user.email || '',
-            messId: user.messId || null
-        });
+            upiId: user.upiId || '',
+            studentHolidays: user.studentHolidays || [],
+            messId: user.messId || null,
+            joinedAt: user.joinedAt || null,
+            plan: user.plan || 'Cycle',
+            amount: user.amount || 0,
+            paid: user.paid || 0
+        };
+
+        if (user.role === 'STUDENT' && user.messId) {
+            const hols = await Holiday.find({ messId: user.messId });
+            const holsFormatted = hols.map(h => ({
+                date: h.dateStr,
+                slot: h.slot || 'Whole Day',
+                reason: h.reason || h.name || ''
+            }));
+            const endDate = messEndDate(user, holsFormatted);
+            payload.endDate = endDate instanceof Date ? endDate.toISOString().split('T')[0] : '';
+        }
+
+        res.json(payload);
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -89,6 +115,11 @@ const updateProfile = asyncHandler(async (req, res) => {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
         user.mobile = req.body.mobile || user.mobile;
+        
+        // Admins/owners can update from profile
+        if (req.body.upiId !== undefined) {
+            user.upiId = req.body.upiId;
+        }
 
         const updatedUser = await user.save();
 
@@ -97,6 +128,7 @@ const updateProfile = asyncHandler(async (req, res) => {
             name: updatedUser.name,
             email: updatedUser.email,
             mobile: updatedUser.mobile,
+            upiId: updatedUser.upiId || '',
             role: updatedUser.role,
             messId: updatedUser.messId || null
         });

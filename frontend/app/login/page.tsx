@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import API from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { UtensilsCrossed, ArrowRight } from 'lucide-react';
+import { UtensilsCrossed, ArrowRight, Home } from 'lucide-react';
 
 export default function LoginPage() {
     const [mobile, setMobile] = useState('');
@@ -65,7 +66,16 @@ export default function LoginPage() {
             </div>
 
             {/* Right Panel - Login Form */}
-            <div className="flex-1 flex items-center justify-center bg-[#faeee7] px-6 py-12">
+            <div className="flex-1 flex items-center justify-center bg-[#faeee7] px-6 py-12 relative">
+                {/* Return to Home Button */}
+                <Link
+                    href="/"
+                    className="absolute top-6 left-6 lg:top-8 lg:right-8 lg:left-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 hover:text-[#0A0A0A] hover:border-neutral-300 transition-all shadow-sm group"
+                >
+                    <Home className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                    Back to Home
+                </Link>
+
                 <div className="w-full max-w-md">
                     {/* Mobile Logo */}
                     <div className="lg:hidden text-center mb-10">

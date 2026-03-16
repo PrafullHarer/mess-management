@@ -27,7 +27,7 @@ Mess-Canteen-Mangement-Software/
 │   ├── app/                      # App Router Pages
 │   │   ├── page.tsx              # Landing page
 │   │   ├── layout.tsx            # Root layout with providers
-│   │   ├── login/page.tsx        # Authentication page
+│   │   ├── login/page.tsx        # Authentication page (with Return to Home nav)
 │   │   ├── owner/                # Owner dashboard & features
 │   │   │   ├── page.tsx          # Main dashboard with stats
 │   │   │   ├── layout.tsx        # Owner layout with sidebar
@@ -113,12 +113,20 @@ Tracks daily operational intake.
 - `/api/students` - Full student life-cycle management
 - `/api/bills/generate` - Bulk monthly bill generation
 
+### Super Admin
+- `GET /api/super-admin/stats` - Platform-wide statistics
+- `GET /api/super-admin/system-health` - System diagnostics (DB, memory, collections, environment)
+- `GET /api/super-admin/messes` - List all mess instances
+- `POST /api/super-admin/messes` - Create mess with owner
+- `DELETE /api/super-admin/messes/:id` - Suspend a mess
+
 ---
 
 ## 🔐 Authorization Levels
 
 | Role | Access Level | Responsibilities |
 |------|--------------|------------------|
+| **SUPER_ADMIN** | Platform | Multi-mess management, System health diagnostics |
 | **OWNER** | Full | Financials, Staff, Admin management, System config |
 | **MANAGER** | Partial | Attendance, Student registry, Daily entry recording |
 | **STUDENT** | Restricted | Personal bill view, Profile view |
@@ -137,6 +145,19 @@ Tracks daily operational intake.
 | `/owner/students` | Enrollment, Plan management, and Attendance history |
 | `/owner/bills` | Monthly bill calculation and WhatsApp notification |
 | `/owner/side-income` | Recording non-mess revenue (Guest entries, etc.) |
+
+### Super Admin Dashboard
+
+| Tab | Functionality |
+|-----|---------------|
+| **Mess Management** | Create, view, and suspend mess instances with owner info |
+| **System Health** | DB connection check, ping latency, collection stats, server memory/CPU, environment config validation |
+
+### Login Page
+
+| Element | Details |
+|---------|----------|
+| `/login` | Authentication form with "Return to Home" button for easy navigation back to the landing page |
 
 ---
 
@@ -165,4 +186,4 @@ Two-shift (Afternoon/Night) marking system with bulk update support.
 
 ---
 
-*Last Updated: March 2026*
+*Last Updated: March 2026 (v1.2.0)*

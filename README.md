@@ -2,7 +2,7 @@
 
 A full-stack web application for managing mess/canteen operations including student billing, attendance tracking, staff management, side income, and daily collections.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
@@ -19,6 +19,13 @@ A full-stack web application for managing mess/canteen operations including stud
 - 📱 **WhatsApp Integration** - Send bill reminders with one click
 - 👨‍🍳 **Staff & Expenses** - Track staff salaries and operational expenses
 - 🛡️ **Admin Team** - Add multiple administrative users with distinct roles (OWNER/MANAGER)
+
+### For Super Admins
+- 🏢 **Multi-Mess Management** - Create, view, and suspend mess instances
+- 🔧 **System Health Dashboard** - Real-time diagnostics with DB connection status, ping latency, collection stats, server memory & CPU, and environment config checks
+
+### General
+- 🏠 **Return to Home** - Quick navigation back to the landing page from the login screen
 
 ### For Students
 - 📄 **View Bills** - See pending and paid bills

@@ -29,6 +29,8 @@ interface Bill {
     status: 'PAID' | 'PENDING';
     generated_at: string;
     transaction_ref?: string;
+    upiId?: string;
+    payeeName?: string;
     breakdown?: BillBreakdown;
 }
 
@@ -87,8 +89,8 @@ export default function BillsPage() {
 
     const handleSendWhatsApp = (bill: Bill) => {
         // UPI Payment Link
-        const upiId = "prafullharer@slc";
-        const payeeName = "Prafull Harer";
+        const upiId = bill.upiId || "prafullharer@slc";
+        const payeeName = bill.payeeName || "Prafull Harer";
         const amount = parseFloat(bill.amount);
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=Mess-Bill-${bill.month}-${bill.year}`;
 

@@ -4,10 +4,11 @@ const {
     listMesses,
     createMessWithOwner,
     editMess,
-    suspendMess,
+    deleteMess,
     listOwners,
     removeOwner,
-    getPlatformStats
+    getPlatformStats,
+    getSystemHealth
 } = require('../controllers/superAdminController');
 
 const router = express.Router();
@@ -18,11 +19,14 @@ router.use(protect, superAdminOnly);
 // Platform stats
 router.get('/stats', getPlatformStats);
 
+// System health
+router.get('/system-health', getSystemHealth);
+
 // Mess CRUD
 router.get('/messes', listMesses);
 router.post('/messes', createMessWithOwner);
 router.put('/messes/:id', editMess);
-router.delete('/messes/:id', suspendMess);
+router.delete('/messes/:id', deleteMess);
 
 // Owner management
 router.get('/owners', listOwners);
