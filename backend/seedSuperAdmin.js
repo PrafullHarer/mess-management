@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const { connectDB } = require('./config/db');
 const { User, findUserByMobile } = require('./models/userModel');
 
-const SUPER_ADMIN_MOBILE = '9999999999';
+const SUPER_ADMIN_MOBILE = '0000000000';
 const SUPER_ADMIN_PASSWORD = 'admin123';
 const SUPER_ADMIN_NAME = 'Super Admin';
 
