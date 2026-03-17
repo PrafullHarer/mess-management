@@ -385,11 +385,9 @@ Go to the Terminal window and press **Ctrl + C**.
 
 | Role | Mobile | Password | Access |
 |:-----|:-------|:---------|:-------|
-| Owner | `9999999999` | `admin123` | Full access |
-| Student 1 | `9000000001` | `student123` | View own bills |
-| Student 2 | `9000000002` | `student123` | View own bills |
-| ... | ... | ... | ... |
-| Student 10 | `9000000010` | `student123` | View own bills |
+| Super Admin | `7387533549` | `prafull@2025` | Full Platform |
+| Super Admin | `8888888888` | `aaditya@2025` | Full Platform |
+| Default Admin| `9999999999` | `admin123` | Initial Setup |
 
 ---
 

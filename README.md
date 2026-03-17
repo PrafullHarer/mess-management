@@ -78,8 +78,9 @@ A full-stack web application for managing mess/canteen operations including stud
 
 | Role | Mobile | Password |
 |------|--------|----------|
-| **Owner** | `9999999999` | `admin123` |
-| **Student** | `9000000001` | `student123` |
+| **Super Admin** | `7387533549` | `prafull@2025` |
+| **Super Admin** | `8888888888` | `aaditya@2025` |
+| **Default Admin**| `9999999999` | `admin123` |
 
 ---
 
