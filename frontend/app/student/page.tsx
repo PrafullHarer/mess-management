@@ -33,31 +33,39 @@ interface Bill {
 }
 
 export default function StudentDashboard() {
-    const { user, logout, loading: authLoading } = useAuth();
+    const { user, logout, loading: authLoading, updateUserInfo } = useAuth();
     const [bills, setBills] = useState<Bill[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hasFetched, setHasFetched] = useState(false);
     const router = useRouter();
 
-    const fetchBills = async () => {
+    const fetchDashboardData = async () => {
         try {
-            const { data } = await API.get('/bills');
-            setBills(data);
+            const [billsRes, meRes] = await Promise.all([
+                API.get('/bills'),
+                API.get('/auth/me')
+            ]);
+            setBills(billsRes.data);
+            if (meRes.data && updateUserInfo) {
+                updateUserInfo(meRes.data);
+            }
         } catch (error) {
-            console.error(error);
+            console.error('Failed to fetch dashboard data:', error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (!authLoading) {
+        if (!authLoading && !hasFetched) {
             if (!user || user.role !== 'STUDENT') {
                 router.push('/login');
             } else {
-                fetchBills();
+                fetchDashboardData();
+                setHasFetched(true);
             }
         }
-    }, [user, router, authLoading]);
+    }, [user, router, authLoading, hasFetched]);
 
     const handlePay = (bill: Bill) => {
         const upiId = bill.upiId || "prafullharer@slc";
@@ -118,7 +126,8 @@ export default function StudentDashboard() {
     
     // Dynamic fallback fetching from DB generated bills if server cache hasn't updated yet
     const joinedAtStr = user?.joinedAt || bills[0]?.breakdown?.joined_at || 'N/A';
-    const endDateStr = user?.endDate || bills[0]?.breakdown?.end_date || 'N/A';
+    const endDateStr = user?.messEndDate || user?.endDate || bills[0]?.breakdown?.end_date || 'N/A';
+    const statusStyle = user?.computedStatus || { label: 'Active', dot: '🟢', color: '#16a34a' };
 
     if (loading || authLoading) {
         return (
@@ -134,27 +143,34 @@ export default function StudentDashboard() {
         <div className="space-y-10 max-w-7xl mx-auto">
                     
                     {/* Welcome Header */}
-                    <div className="flex items-end justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                         <div>
                             <p className="text-sm font-medium text-neutral-500 mb-1">
                                 {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                             </p>
-                            <h1 className="text-3xl font-bold tracking-tight text-[#0A0A0A]">My Dashboard</h1>
+                            <h1 className="text-3xl font-bold tracking-tight text-[#0A0A0A] flex items-center gap-3">
+                                My Dashboard
+                                {user?.computedStatus && (
+                                    <span style={{ color: statusStyle.color }} className="text-sm px-2.5 py-1 rounded-lg border bg-white shadow-sm font-semibold flex items-center gap-1.5">
+                                        {statusStyle.dot} {statusStyle.label}
+                                    </span>
+                                )}
+                            </h1>
                         </div>
                     </div>
 
-                    {/* Primary Stats Grid (Matching Admin Das) */}
+                    {/* Primary Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Start Date Card */}
                         <div className="card transition-all duration-150 bg-emerald-50 border-emerald-100">
                             <div className="flex items-center gap-2 mb-4 text-emerald-600">
                                 <CalendarRange className="w-4 h-4" />
-                                <span className="text-xs font-semibold uppercase tracking-wider">Mess Started On</span>
+                                <span className="text-xs font-semibold uppercase tracking-wider">Joined On</span>
                             </div>
                             <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
                                 {formatDate(joinedAtStr)}
                             </p>
-                            <p className="text-xs text-neutral-500 mt-2 font-medium">Your current cycle start date</p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Cycle start date</p>
                         </div>
 
                         {/* End Date Card */}
@@ -166,13 +182,55 @@ export default function StudentDashboard() {
                             <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
                                 {formatDate(endDateStr)}
                             </p>
-                            <p className="text-xs text-neutral-500 mt-2 font-medium">Renews or expires on this date</p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Cycle end date</p>
                         </div>
                         
+                        {/* Remaining Meals Card */}
+                        <div className="card transition-all duration-150 bg-pink-50 border-pink-100">
+                            <div className="flex items-center gap-2 mb-4 text-pink-600">
+                                <Coffee className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Remaining Meals</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
+                                {user?.remainingMeals ?? 'N/A'} <span className="text-lg text-neutral-500 font-medium tracking-normal">/ {user?.totalMeals ?? 'N/A'}</span>
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Meals left in cycle</p>
+                        </div>
+
+                        {/* Total Amount Card */}
+                        <div className="card transition-all duration-150 bg-blue-50 border-blue-100">
+                            <div className="flex items-center gap-2 mb-4 text-blue-600">
+                                <IndianRupee className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Total Fee</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
+                                ₹{(user?.amount || 0).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Total cycle fee</p>
+                        </div>
+
+                        {/* Paid Amount Card */}
+                        <div className="card transition-all duration-150 bg-purple-50 border-purple-100">
+                            <div className="flex items-center gap-2 mb-4 text-purple-600">
+                                <CheckCircle className="w-4 h-4" />
+                                <span className="text-xs font-semibold uppercase tracking-wider">Paid Amount</span>
+                            </div>
+                            <p className="text-3xl font-bold tracking-tight text-[#0A0A0A]">
+                                ₹{(user?.paid || 0).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-2 font-medium">Amount paid so far</p>
+                        </div>
+
+                        {/* Total Pending Dues Card */}
                         <div className="card transition-all duration-150 bg-[#0A0A0A] text-white border-[#0A0A0A]">
-                            <div className="flex items-center gap-2 mb-4 text-neutral-400">
-                                <AlertCircle className="w-4 h-4" />
-                                <span className="text-xs font-semibold uppercase tracking-wider">Total Pending Dues</span>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2 text-neutral-400">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span className="text-xs font-semibold uppercase tracking-wider">Pending Dues</span>
+                                </div>
+                                {pendingBills.length > 0 && (
+                                    <span className="bg-[#ff7b9b]/20 text-[#ff7b9b] px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase">Due Now</span>
+                                )}
                             </div>
                             <p className="text-3xl font-bold tracking-tight text-[#ff7b9b]">
                                 ₹{totalPending.toLocaleString()}
@@ -180,10 +238,13 @@ export default function StudentDashboard() {
                             {pendingBills.length > 0 && (
                                 <button
                                     onClick={handlePayAll}
-                                    className="w-full mt-4 py-2.5 rounded-lg bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 hover:bg-neutral-100 transition-all"
+                                    className="w-full mt-4 py-2.5 rounded-lg bg-white text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 hover:bg-neutral-100 transition-all shadow-sm"
                                 >
-                                    Pay All Dues <ArrowRight className="w-3.5 h-3.5" />
+                                    Pay Outstanding <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
+                            )}
+                            {pendingBills.length === 0 && (
+                                <p className="text-xs text-neutral-400 mt-2 font-medium">No pending dues currently</p>
                             )}
                         </div>
                     </div>

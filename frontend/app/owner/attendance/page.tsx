@@ -258,47 +258,66 @@ export default function AttendancePage() {
                 </select>
             </div>
 
-            {/* Today's Status Banner */}
+            {/* Today's Meal Requirement Cards */}
             {(() => {
                 const todayStr = new Date().toISOString().split('T')[0];
-                let presentCount = 0;
-                let globalHolCount = 0;
-                let personalHolCount = 0;
-                filtered.forEach(s => {
+                let studentsPresent = 0;
+                let studentsOnLeave = 0;
+                let vegPresent = 0;
+                let nonVegPresent = 0;
+                
+                students.forEach(s => {
                     const gDates = getGlobalHolidayDates(s.plan || '');
-                    if (gDates.has(todayStr)) {
-                        globalHolCount++;
-                    } else if ((s.studentHolidays || []).includes(todayStr)) {
-                        personalHolCount++;
+                    const onLeave = gDates.has(todayStr) || (s.studentHolidays || []).includes(todayStr);
+                    
+                    if (onLeave) {
+                        studentsOnLeave++;
                     } else {
-                        presentCount++;
+                        studentsPresent++;
+                        if ((s.diet || '').toLowerCase().includes('non')) {
+                            nonVegPresent++;
+                        } else {
+                            vegPresent++;
+                        }
                     }
                 });
+
                 return (
-                    <div className="card flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[#0A0A0A]">Today</span>
-                            <span className="text-xs text-neutral-400">
-                                {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="card bg-emerald-50 border-emerald-100 transition-all duration-200 hover:shadow-md">
+                            <div className="flex items-center gap-2 mb-3 text-emerald-600">
+                                <Check className="w-4 h-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Total Present Today</span>
+                            </div>
+                            <p className="text-3xl font-black text-[#0A0A0A]">{studentsPresent}</p>
+                            <p className="text-xs text-neutral-500 mt-1 font-medium">Expected for meals</p>
                         </div>
-                        <div className="flex items-center gap-4 text-xs font-semibold">
-                            <span className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <span className="text-emerald-600">{presentCount} Present</span>
-                            </span>
-                            {globalHolCount > 0 && (
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    <span className="text-blue-600">{globalHolCount} Global Holiday</span>
-                                </span>
-                            )}
-                            {personalHolCount > 0 && (
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                    <span className="text-orange-600">{personalHolCount} Personal Holiday</span>
-                                </span>
-                            )}
+
+                        <div className="card bg-orange-50 border-orange-100 transition-all duration-200 hover:shadow-md">
+                            <div className="flex items-center gap-2 mb-3 text-orange-600">
+                                <X className="w-4 h-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Total On Leave</span>
+                            </div>
+                            <p className="text-3xl font-black text-[#0A0A0A]">{studentsOnLeave}</p>
+                            <p className="text-xs text-neutral-500 mt-1 font-medium">Not coming today</p>
+                        </div>
+
+                        <div className="card bg-blue-50 border-blue-100 transition-all duration-200 hover:shadow-md">
+                            <div className="flex items-center gap-2 mb-3 text-blue-600">
+                                <span className="text-base">🥬</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Veg Meals</span>
+                            </div>
+                            <p className="text-3xl font-black text-[#0A0A0A]">{vegPresent}</p>
+                            <p className="text-xs text-neutral-500 mt-1 font-medium">Vegetarian count</p>
+                        </div>
+
+                        <div className="card bg-rose-50 border-rose-100 transition-all duration-200 hover:shadow-md">
+                            <div className="flex items-center gap-2 mb-3 text-rose-600">
+                                <span className="text-base">🍗</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Non-Veg Meals</span>
+                            </div>
+                            <p className="text-3xl font-black text-[#0A0A0A]">{nonVegPresent}</p>
+                            <p className="text-xs text-neutral-500 mt-1 font-medium">Non-vegetarian count</p>
                         </div>
                     </div>
                 );

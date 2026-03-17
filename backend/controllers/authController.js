@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const asyncHandler = require('../utils/asyncHandler');
 const { findUserByMobile, findUserById, createUser, User, deleteUser } = require('../models/userModel');
 const { Holiday } = require('../models/holidayModel');
-const { messEndDate, fmtDate } = require('../utils/calculations');
+const { messEndDate, fmtDate, studentStatus, remainingMeals, simulatePlan, totalMeals, safeInt } = require('../utils/calculations');
 
 const login = asyncHandler(async (req, res) => {
     const { mobile, password } = req.body;
@@ -87,18 +87,37 @@ const getMe = asyncHandler(async (req, res) => {
             joinedAt: user.joinedAt || null,
             plan: user.plan || 'Cycle',
             amount: user.amount || 0,
-            paid: user.paid || 0
+            paid: user.paid || 0,
+            remainingMeals: 0,
+            totalMeals: 0,
+            computedStatus: { label: 'No Active Mess', color: '#6b7280', dot: '⚪' }
         };
 
-        if (user.role === 'STUDENT' && user.messId) {
-            const hols = await Holiday.find({ messId: user.messId });
+        if (user.role === 'STUDENT') {
+            const hols = await Holiday.find({ messId: user.messId || { $exists: false } });
             const holsFormatted = hols.map(h => ({
                 date: h.dateStr,
                 slot: h.slot || 'Whole Day',
                 reason: h.reason || h.name || ''
             }));
-            const endDate = messEndDate(user, holsFormatted);
+            const uObj = user.toObject();
+            const st = studentStatus(uObj, holsFormatted);
+            const rem = remainingMeals(uObj, holsFormatted);
+            const endDate = messEndDate(uObj, holsFormatted);
+            const sim = simulatePlan(uObj, holsFormatted);
+            const tm = totalMeals(uObj.plan);
+            const consumedMeals = tm - rem;
+
             payload.endDate = endDate instanceof Date ? endDate.toISOString().split('T')[0] : '';
+            payload.messEndDate = fmtDate(endDate);
+            payload.messEndDateISO = payload.endDate;
+            payload.computedStatus = st;
+            payload.remainingMeals = rem;
+            payload.totalHolidays = sim.personalHols;
+            payload.totalMeals = tm;
+            payload.consumedMeals = consumedMeals;
+            payload.pending = safeInt(uObj.amount) - safeInt(uObj.paid);
+            payload.joinedAt = uObj.joinedAt || uObj.joiningDate || payload.joinedAt;
         }
 
         res.json(payload);

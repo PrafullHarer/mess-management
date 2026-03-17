@@ -17,6 +17,19 @@ interface User {
     amount?: number;
     paid?: number;
     endDate?: string;
+    messEndDate?: string;
+    messEndDateISO?: string;
+    computedStatus?: {
+        label: string;
+        color: string;
+        dot: string;
+        secondary?: { label: string; color: string };
+    };
+    remainingMeals?: number;
+    totalHolidays?: number;
+    totalMeals?: number;
+    consumedMeals?: number;
+    pending?: number;
 }
 
 interface AuthContextType {
