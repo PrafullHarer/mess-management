@@ -1,87 +1,119 @@
-# 🏗️ Mess-Canteen-Mangement-Software - Full Feature Mapping
+# 🏗️ Mess-Canteen-Mangement-Software - Detailed Architecture Mapping
 
-This document provides a deep-dive mapping between the **Frontend**, **Backend**, and **Database** for every function in the project.
-
----
-
-## 🔑 1. Authentication & Session
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Login** | `login/page.tsx` (`handleSubmit`) | `POST /api/auth/login` (`loginUser`) | `User.findOne({ mobile })` |
-| **Verify Session** | `AuthContext.tsx` (`checkAuth`) | `GET /api/auth/me` (`getMe`) | `User.findById(decoded.id)` |
-| **Update Profile** | `owner/profile/page.tsx` | `PUT /api/auth/profile` (`updateProfile`) | `User.findByIdAndUpdate` |
-| **Change Password** | `owner/profile/page.tsx` | `PUT /api/auth/password` (`changePassword`) | `User.save()` (with bcrypt) |
+This document provides a technical deep-dive into the interaction between the Frontend, Backend, and Database layers.
 
 ---
 
-## 👥 2. Student Management (Owner)
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **List Students** | `owner/students/page.tsx` | `GET /api/students` (`getStudents`) | `User.find({ role: 'STUDENT' })` |
-| **Add Student** | Modal in `owner/students/page.tsx` | `POST /api/students` (`addStudent`) | `User.create({...})` |
-| **Edit Student** | Modal in `owner/students/page.tsx` | `PUT /api/students/:id` (`updateStudent`) | `User.findByIdAndUpdate` |
-| **Soft Delete** | Trash icon in `owner/students/` | `PUT /api/students/:id` (`deleteStudent`) | `User.findByIdAndUpdate(..., { isDeleted: true })` |
+## 🛠️ System Overview
+
+The project follows a **MERN-like** architecture (MongoDB, Express, React/Next, Node).
+
+- **Frontend**: Next.js 16.1.1 (App Router) + Tailwind CSS 4.
+- **Backend**: Express.js 5.2.1 + Node.js.
+- **Database**: MongoDB Atlas (Cloud) + Mongoose ODM 9.0.2.
+- **Communication**: RESTful API with JSON payloads & Bearer Token authentication.
 
 ---
 
-## 📅 3. Attendance & Planning (Owner)
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Live Meal Cards** | `owner/attendance/page.tsx` | Local logic + `GET /api/students` | Calculated from `User` & `Holiday` data |
-| **Mark Holiday** | Calendar in `owner/attendance/` | `PUT /api/students/:id` (`updateStudent`) | Updates `studentHolidays` array in `User` model |
-| **Manage Holidays** | `owner/holidays/page.tsx` | `GET/POST/DELETE /api/holidays` | `Holiday.find()`, `Holiday.create()` |
-| **Bulk Attendance** | (Planned/Manual per student) | `POST /api/attendance` | `Attendance.create()` |
+## 🔑 1. Identity & Access Module (IAM)
+
+### **A. Registration & User Setup**
+- **Flow**: Owner is created via Super Admin or `seed.js`. Student is created via Owner.
+- **Password**: Hashed using `bcryptjs` (salt rounds: 10).
+- **Endpoint**: `POST /api/students` (Owner context) or `POST /api/super-admin/messes`.
+
+### **B. Login & JWT Lifecycle**
+- **Process**:
+  1. Frontend (`/login`) sends credentials.
+  2. Backend (`authController.js:loginUser`) verifies hashed password.
+  3. Backend issues JWT (expires 30d).
+  4. Frontend (`AuthContext.tsx`) stores token in `js-cookie` and User object in `localStorage`.
+- **Interceptors**: `frontend/lib/api.ts` attaches `Authorization: Bearer <token>` to all outgoing requests.
+
+### **C. Session Hydration**
+- **Endpoint**: `GET /api/auth/me` (`getMe`).
+- **Logic**: Backend retrieves `User`, then calls `calculations.js` to compute real-time fields for the student (Remaining Meals, Status, End Date) before returning.
 
 ---
 
-## 💰 4. Billing & Payments
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Generate Bills** | `owner/bills/page.tsx` | `POST /api/bills/generate` (`generateMonthlyBills`) | `Bill.create()` for all active `User`s |
-| **Pay Bill (Owner)** | `owner/bills/page.tsx` | `PUT /api/bills/:id/status` (`updateBillStatus`) | `Bill.findByIdAndUpdate(..., { status: 'PAID' })` |
-| **View Bills (Std)** | `student/page.tsx` | `GET /api/bills` (`getStudentBills`) | `Bill.find({ student_id: user.id })` |
-| **PDF Download** | `student/page.tsx` (`handleDownload`) | `GET /api/bills/:id/pdf` (`getBillPdf`) | Fetches `Bill` and uses `PDFKit` to stream response |
-| **WhatsApp Link** | `owner/bills/` (UI Helper) | N/A (Client-side URL format) | Uses `User.mobile` and `Bill.amount` |
+## 🎓 2. Student Lifecycle & Dynamic Logic
+
+### **A. The "Virtual Ledgers" Concept**
+Unlike traditional systems, student state (Dues) is often tracked directly on the `User` object (`amount` and `paid` fields).
+- **Pending Calculation**: `pending = User.amount - User.paid`.
+- **Payment Lifecycle**: `PUT /api/bills/:id/status` simply sets `student.paid = student.amount`.
+
+### **B. Meal Calculation Engine (`calculations.js`)**
+This utility powers the entire system's dynamic data:
+| Function | Description | Input |
+|:---|:---|:---|
+| `simulatePlan` | Core simulator for cycles. | JoinedDate + Plan + Holidays |
+| `remainingMeals` | Calculates meals left in the current cycle. | PlanType + Consumption history |
+| `messEndDate` | Dynamically projects the end date. | Base30Days + HolidayExtensions |
+| `studentStatus` | Returns a UI object (Label/Color). | Dues + RemainingMeals + Dates |
 
 ---
 
-## 🍗 5. Daily Collections & Side Income
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Log Collection** | `owner/daily-entries/page.tsx` | `POST /api/daily-entries` (`createEntry`) | `DailyEntry.create()` |
-| **History View** | `owner/daily-entries/` | `GET /api/daily-entries` (`getEntries`) | `DailyEntry.find().sort({ date: -1 })` |
-| **Log Side Income** | `owner/side-income/page.tsx` | `POST /api/side-income` (`addIncome`) | `SideIncome.create()` |
-| **Income Report** | `owner/side-income/` | `GET /api/side-income` (`getIncome`) | `SideIncome.find()` |
+## 💰 3. Billing & Financial Planning
+
+### **A. Bill Generation Architectures**
+1. **Virtual Bills** (Live): `GET /api/bills` generates on-the-fly bills by mapping active students.
+2. **Historical Bills**: Managed via `Bill.create()` and `billModel.js` for monthly snapshots.
+
+### **B. Document Processing (PDF)**
+- **Feature**: `GET /api/bills/:id/pdf`.
+- **Tech**: `PDFKit`.
+- **Logic**: Streams a dynamic PDF with:
+  - Header branding.
+  - Student identity.
+  - Line-item breakdown of cycle dues.
+  - **Embedded UPI Link**: Constructing the `upi://pay` URI for immediate mobile app redirection.
 
 ---
 
-## 👨‍🍳 6. Staff & Expenses
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Staff List** | `owner/staff/page.tsx` | `GET /api/staff` (`getStaff`) | `Staff.find()` |
-| **Pay Salary** | `owner/staff/` | `PUT /api/staff/:id/pay` (`payStaff`) | `Staff.findByIdAndUpdate` + Log Expense |
-| **Add Expense** | `owner/staff/` | `POST /api/staff/expenses` (`addExpense`) | `Expense.create()` |
+## 📅 4. Attendance & Kitchen Metrics
+
+### **A. Attendance Logic**
+- **Data Source**: `GET /api/students` (includes `diet` and `studentHolidays`).
+- **Data Source**: `GET /api/holidays` (Global Mess Holidays).
+- **Frontend calculation (`attendance/page.tsx`)**:
+  ```javascript
+  const onLeave = globalHolidayToday || studentHolidayToday;
+  if (!onLeave) {
+    countPresent++;
+    if (student.diet === 'Non Veg') nonVegCount++;
+  }
+  ```
 
 ---
 
-## 🛡️ 7. Super Admin (Global Control)
-| Function | Frontend (UI/Control) | Backend (Route/Controller) | Database (Model/Query) |
-|:---|:---|:---|:---|
-| **Manage Messes** | `super-admin/page.tsx` | `GET/POST/DELETE /api/super-admin/messes` | `Mess.find()`, `Mess.create()` |
-| **System Health** | `super-admin/` (Health Tab) | `GET /api/super-admin/system-health` | Direct `mongoose.connection` & `process` checks |
-| **Create Owner** | Modal in `super-admin/` | `POST /api/auth/register-owner` | `User.create({ role: 'OWNER' })` |
+## 🛡️ 5. Administrative Access Control
+
+| Middleware | Role Check | Path Restriction |
+|:---|:---|:---|
+| `protect` | Token Validation | All private routes (`req.user` population) |
+| `superAdminOnly`| `role === 'SUPER_ADMIN'`| `/api/super-admin/*` |
+| `ownerOnly` | `role === 'OWNER' \|\| 'SUPER_ADMIN'` | `/api/students`, `/api/bills/generate` |
+| `messStaffOnly` | `role === 'OWNER' \|\| 'MANAGER' \|\| 'SUPER_ADMIN'`| `/api/attendance`, `/api/daily-entries` |
 
 ---
 
-## 📂 8. Core Data Models Summary (Database)
+## 🗃️ 6. Data Model Correlation
 
-1. **User**: Students, Owners, Managers. Fields: `mobile`, `role`, `plan`, `amount`, `paid`, `studentHolidays`.
-2. **Mess**: Mess instances managed by Super Admin. Fields: `name`, `ownerId`, `address`.
-3. **Bill**: Monthly invoices. Fields: `student_id`, `amount`, `status`, `breakdown`.
-4. **DailyEntry**: Canteen sales. Fields: `date`, `slot`, `cash`, `online`.
-5. **SideIncome**: Guest feeds, extra meals. Fields: `reason`, `amount`, `date`.
-6. **Expense**: Staff salaries, groceries, gas. Fields: `category`, `amount`, `date`.
-7. **Holiday**: Global mess holidays. Fields: `dateStr`, `slot`, `name`.
+```mermaid
+erDiagram
+    MESS ||--o{ USER : contains
+    MESS ||--o{ HOLIDAY : schedules
+    USER ||--o{ BILL : receives
+    USER ||--o{ ATTENDANCE : logs
+    OWNER ||--o{ STAFF : manages
+    OWNER ||--o{ DAILY_ENTRY : records
+    OWNER ||--o{ SIDE_INCOME : tracks
+```
+
+- **User Model**: Central identity hub (Role-based).
+- **Holiday Model**: Scoped by `messId` to extend the cycles of students in that mess.
+- **DailyEntry**: Scoped by date and slot (Lunch/Dinner) for canteen cash flow tracking.
 
 ---
-*Generated: March 2026*
+*Last Updated: March 2026 (v1.3.1)*
