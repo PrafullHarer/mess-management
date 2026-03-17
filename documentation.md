@@ -217,8 +217,8 @@ Real-time calculation of custom cycle end dates based on holidays, personal leav
 1. **Setup Environment**: Create a `.env` in the root with `DATABASE_URL` and `JWT_SECRET`.
 2. **Install Dependencies**: `npm install`
 3. **Run Application**: `npm run dev` (Starts both Next.js and Express).
-4. **Seed Data**: `node backend/seedSuperAdmin.js` for initial setup.
-5. **Add Super Admins**: `node backend/createSuperAdmins.js` for developers.
+4. **Seed Data**: Run the provided seed scripts in the `backend/` directory for initial setup.
+5. **Secure Admins**: Ensure Super Admin credentials are managed securely via environment variables or direct database entry.
 
 ---
 
