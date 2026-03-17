@@ -36,6 +36,16 @@ Students can:
 
 ---
 
+## 🔌 How the App Works (Connection Overview)
+
+The application stays "live" by constantly talking to the database:
+- **Login**: When you enter your mobile/password, the app checks the database and gives you a digital "key" (token) to stay logged in.
+- **Dynamic Stats**: Every time you open a page, the app calls the backend to get the latest meal counts and billing figures.
+- **Owner-Student Sync**: When an owner marks an absence in the "Attendance" section, it immediately updates the "Remaining Meals" on that student's dashboard.
+- **Payments**: The student's "Pay" button uses a secure UPI link that pre-fills your unique UPI ID for error-free transactions.
+
+---
+
 ## 🛑 Prerequisites (One-Time Setup)
 
 Before running the application, you need to install two things. **Do this only once.**

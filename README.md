@@ -98,6 +98,7 @@ Mess-Canteen-Mangement-Software/
 ## 📚 Documentation
 
 - [📖 Technical Documentation](./documentation.md) - API reference, database schema, architecture
+- [🔌 Connection Guide](./documentation.md#-page-wise-connection-guide) - Step-by-step API-to-Page mapping
 - [🔰 Beginner's Guide](./beginner_guide.md) - Step-by-step setup for non-developers
 
 ---

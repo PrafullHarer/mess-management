@@ -155,11 +155,41 @@ Tracks daily operational intake.
 | **Mess Management** | Create, view, and suspend mess instances with owner info |
 | **System Health** | DB connection check, ping latency, collection stats, server memory/CPU, environment config validation |
 
-### Login Page
-
-| Element | Details |
-|---------|----------|
 | `/login` | Authentication form with "Return to Home" button for easy navigation back to the landing page |
+
+---
+
+## 🔌 Page-Wise Connection Guide
+
+This section maps frontend routes to their backend API data sources.
+
+### 🏠 Global Context (`AuthContext`)
+- **Endpoint:** `/api/auth/me` (`GET`)
+- **Sync:** Runs on every page load to populate the `user` object with dynamic stats (Remaining Meals, Status, End Date).
+
+### 👨‍💼 Owner Dashboard
+| Page | Primary API Source | Method | Key Data |
+|------|--------------------|--------|----------|
+| `/owner` | `/api/dashboard/stats` | `GET` | Revenue, Expenses, Pending Dues |
+| `/owner/students` | `/api/students` | `GET/POST/PUT` | Student profiles and meal plans |
+| `/owner/attendance`| `/api/students` & `/api/holidays` | `GET` | Mark absence and auto-calculate kitchen needs |
+| `/owner/bills` | `/api/bills` | `GET/POST` | Generate monthly invoices and WhatsApp links |
+| `/owner/side-income`| `/api/side-income` | `GET/POST` | Extra canteen sales tracking |
+| `/owner/daily-entries`| `/api/daily-entries`| `GET/POST` | Cash vs Online daily totals |
+| `/owner/staff` | `/api/staff` & `/api/staff/expenses` | `GET/POST` | Salary and operational cost tracking |
+
+### 🎓 Student Dashboard
+| Component | API Source | Logic |
+|-----------|------------|-------|
+| Stats Cards | `/api/auth/me` | Fetches live `remainingMeals` and `messEndDate` |
+| Bill List | `/api/bills` | Filters bills specifically for the logged-in student |
+| Payment | `upi://pay` | Deep-links to mobile apps using `user.upiId` |
+
+### 🛠️ Super Admin
+| Page | API Source | Diagnostic Info |
+|------|------------|-----------------|
+| Mess List | `/api/super-admin/messes` | CRUD for multiple mess instances |
+| System Health | `/api/super-admin/system-health`| Server memory, CPU, DB ping, and env config |
 
 ---
 
