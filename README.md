@@ -2,7 +2,7 @@
 
 A full-stack web application for managing mess/canteen operations including student billing, attendance tracking, staff management, side income, and daily collections.
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
@@ -12,7 +12,7 @@ A full-stack web application for managing mess/canteen operations including stud
 ### For Owners/Admins
 - 📊 **Dashboard** - Real-time stats on revenue, expenses, side income, and student count
 - 👥 **Student Management** - Add, edit, soft-delete students with flexible pricing plans
-- 📅 **Attendance Tracking** - Mark daily attendance (Afternoon/Night shifts)
+- 📅 **Attendance Tracking** - Mark daily attendance with **Live Meal Requirement Cards** (Total Present, On Leave, Veg/Non-Veg counts) to plan daily food preparation
 - 💰 **Daily Collections** - Track daily cash vs online intake from canteen sales
 - 📈 **Side Income** - Manage additional revenue streams (Guest entries, Extra meals, etc.)
 - 💰 **Bill Generation** - Automated monthly billing with attendance-based calculations
@@ -28,10 +28,11 @@ A full-stack web application for managing mess/canteen operations including stud
 - 🏠 **Return to Home** - Quick navigation back to the landing page from the login screen
 
 ### For Students
+- 📊 **Dynamic Dashboard** - Real-time tracking of **Remaining Meals**, **Joining Date**, and **Automated Cycle End Date** (adjusts for holidays/plans)
 - 📄 **View Bills** - See pending and paid bills
 - 📥 **Download PDF Bills** - Get detailed PDF with payment breakdown
 - 💳 **UPI Payment** - Pay directly via UPI deep links
-- 📊 **Attendance Summary** - View absent days and meal counts
+- 📅 **Personal Holidays** - View marked absences and cycle validity status
 
 ---
 

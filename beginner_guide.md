@@ -29,10 +29,10 @@ The **Mess-Canteen-Mangement-Software** helps canteen owners:
 - ✅ View revenue and expense reports
 
 Students can:
-- 📱 View their pending and paid bills
+- 📱 View real-time **Remaining Meals** and cycle **End Date**
 - 💳 Pay via UPI with one click
 - 📄 Download PDF bills with full details
-- 📊 See their attendance summary
+- 📊 Mark/View personal holidays and attendance summary
 
 ---
 
@@ -209,8 +209,9 @@ Use these credentials:
 
 1. Go to **Attendance** in the sidebar
 2. Select today's date using the date picker
-3. For each student, click **Present** or **Absent**
-4. Changes are saved automatically
+3. **Plan Today's Meals**: Look at the top cards (Present, On Leave, Veg/Non-Veg). Use these numbers to tell the kitchen exactly how much food to prepare.
+4. For each student, click **Present** or **Absent**
+5. Changes are saved automatically
 
 > 💡 **Tip:** For Postpaid students, attendance directly affects their bill!
 
@@ -442,4 +443,4 @@ Go to the Terminal window and press **Ctrl + C**.
 
 *Happy Managing! 🍽️*
 
-*Last Updated: March 2026*
+*Last Updated: March 2026 (v1.3.0)*

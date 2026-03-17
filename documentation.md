@@ -143,8 +143,10 @@ Tracks daily operational intake.
 | `/owner/admins` | Adding/Removing system administrators |
 | `/owner/daily-entries` | Logging daily canteen sales (Cash vs Online) |
 | `/owner/students` | Enrollment, Plan management, and Attendance history |
+| `/owner/attendance` | Mark absence and view **Global Meal Requirements** (Veg/Non-Veg counts) |
 | `/owner/bills` | Monthly bill calculation and WhatsApp notification |
 | `/owner/side-income` | Recording non-mess revenue (Guest entries, etc.) |
+| `/owner/staff` | Salary tracking and operational expenses |
 
 ### Super Admin Dashboard
 
@@ -173,7 +175,10 @@ Click-to-chat links for sending bills directly to student mobile numbers.
 Deep-link generation (`upi://pay`) for one-click payments via any UPI app.
 
 ### Advanced Attendance
-Two-shift (Afternoon/Night) marking system with bulk update support.
+Two-shift (Afternoon/Night) marking system with bulk update support and **Daily Kitchen Planning Cards** (Present vs On-Leave metrics).
+
+### Dynamic Student Metrics
+Real-time calculation of custom cycle end dates based on holidays, personal leaves, and remaining meal allowances.
 
 ---
 
@@ -186,4 +191,4 @@ Two-shift (Afternoon/Night) marking system with bulk update support.
 
 ---
 
-*Last Updated: March 2026 (v1.2.0)*
+*Last Updated: March 2026 (v1.3.0)*
